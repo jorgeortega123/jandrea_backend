@@ -1,0 +1,49 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "jandrea-backend",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-07-09",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+      "observability": {
+                 
+
+                
+
+                      "enabled": true
+                 
+
+                
+
+                    },
+  // "vars": {
+  //   "MY_VAR": "my-variable"
+  // },
+  // "kv_namespaces": [
+  //   {
+  //     "binding": "MY_KV_NAMESPACE",
+  //     "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  //   }
+  // ],
+  // "r2_buckets": [
+  //   {
+  //     "binding": "MY_BUCKET",
+  //     "bucket_name": "my-bucket"
+  //   }
+  // ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "jandrea-products",
+      "database_id": "e710a775-5725-4c14-8297-5b9090998277"
+    }
+  ],
+  // "ai": {
+  //   "binding": "AI"
+  // },
+  // "observability": {
+  //   "enabled": true,
+  //   "head_sampling_rate": 1
+  // }
+}
