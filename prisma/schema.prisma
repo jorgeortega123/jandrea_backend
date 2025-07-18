@@ -16,21 +16,22 @@ model User {
 }
 
 model FacturaSinInva {
-  id         String    @id @default(uuid())
-  facturaId  Int       @default(0)
-  code       String?
-  valueCupon Int?
-  name       String
-  email      String?
-  phone      Int?
-  isPrinted  Boolean   @default(true)
-  datePrint  DateTime?
-  createdAt  DateTime  @default(now()) 
-  updatedAt  DateTime  @updatedAt @default("2025-07-14T02:46:36.459Z")
-  address    String
-  dni        Int?
-  subTotal   Int
-  total      Int
+  id          String    @id @default(uuid())
+  facturaId   Int       @default(0)
+  code        String?
+  valueCupon  Float?
+  expireCupon DateTime? @default("2025-07-14T02:46:36.459Z")
+  name        String
+  email       String?
+  phone       Int?
+  isPrinted   Boolean   @default(true)
+  datePrint   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default("2025-07-14T02:46:36.459Z") @updatedAt
+  address     String
+  dni         Int?
+  subTotal Float
+  total    Float
 
   products  ProductSchema[]
   discounts DiscountSchema[]
@@ -40,7 +41,7 @@ model ProductSchema {
   id               Int            @id @default(autoincrement())
   productId        String?
   title            String
-  price            Int
+  price            Float
   quantity         Int
   facturaSinInva   FacturaSinInva @relation(fields: [facturaSinInvaId], references: [id])
   facturaSinInvaId String
@@ -49,7 +50,7 @@ model ProductSchema {
 model DiscountSchema {
   id               Int            @id @default(autoincrement())
   title            String?
-  amount           Int?
+  amount           Float?
   cupon            Boolean?
   isValid          Boolean?
   facturaSinInva   FacturaSinInva @relation(fields: [facturaSinInvaId], references: [id])

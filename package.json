@@ -1,7 +1,7 @@
 {
   "name": "jandrea-backend",
   "scripts": {
-    "migration": "npx prisma migrate diff --from-schema-datamodel  ./prisma/prev.prisma  --to-schema-datamodel ./prisma/schema.prisma  --script --output migrations/0008_create_user_table.sql",
+    "migration": "npx prisma migrate diff --from-schema-datamodel  ./prisma/prev.prisma  --to-schema-datamodel ./prisma/schema.prisma  --script --output migrations/0012_create_user_table.sql",
     "migrationEmpty": "npx prisma migrate diff --from-empty ./prisma/prev.prisma  --to-schema-datamodel ./prisma/schema.prisma  --script --output migrations/0004_create_user_table.sql",
     "database": "npx wrangler d1 migrations apply jandrea-products --remote",
     "generate":"pnpm prisma generate",
