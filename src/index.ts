@@ -18,7 +18,7 @@ app.use(
       ];
       return allowedOrigins.includes(origin ?? "") ? origin : "";
     },
-    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowMethods: ["GET", "POST", "OPTIONS", "PATCH"],
     allowHeaders: ["Content-Type", "Authorization"],
   })
 );

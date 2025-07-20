@@ -105,9 +105,8 @@ newRouter.get("/notPrinted", async (c, next) => {
       isPrinted: false,
     },
     include: {
-      discounts:{
-      },
-      products:{},
+      discounts: {},
+      products: {},
     },
   });
   try {
@@ -128,7 +127,7 @@ newRouter.patch("/updateState", async (c, next) => {
 
   try {
     const facturaActualizada = await prisma.facturaSinInva.update({
-      where: { id },
+      where: { id: id },
       data: {
         isPrinted: true,
       },
