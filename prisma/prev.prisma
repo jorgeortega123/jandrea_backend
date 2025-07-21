@@ -19,7 +19,7 @@ model FacturaSinInva {
   id          String    @id @default(uuid())
   facturaId   Int       @default(0)
   code        String?
-  valueCupon  Int?
+  valueCupon  Float?
   expireCupon DateTime? @default("2025-07-14T02:46:36.459Z")
   name        String
   email       String?
@@ -41,7 +41,7 @@ model ProductSchema {
   id               Int            @id @default(autoincrement())
   productId        String?
   title            String
-  price            Int
+  price            Float
   quantity         Int
   facturaSinInva   FacturaSinInva @relation(fields: [facturaSinInvaId], references: [id])
   facturaSinInvaId String
@@ -50,9 +50,10 @@ model ProductSchema {
 model DiscountSchema {
   id               Int            @id @default(autoincrement())
   title            String?
-  amount           Int?
+  amount           Float?
   cupon            Boolean?
   isValid          Boolean?
   facturaSinInva   FacturaSinInva @relation(fields: [facturaSinInvaId], references: [id])
   facturaSinInvaId String
 }
+
