@@ -19,6 +19,7 @@ newRouter.post("/create", async (c, next) => {
     products,
     discounts,
     isPrinted,
+    facturaId,
     expireCupon,
   } = body;
 
@@ -31,6 +32,7 @@ newRouter.post("/create", async (c, next) => {
     // { field: "address", name: "dirección" },
     // { field: "dni", name: "DNI" },
     { field: "subTotal", name: "subtotal" },
+    { field: "facturaId", name: "facturaId" },
     { field: "total", name: "total" },
     { field: "products", name: "productos" },
   ];
@@ -53,9 +55,7 @@ newRouter.post("/create", async (c, next) => {
     //     where: { id: 1 },
     //     include: { products: {}, discounts: {} },
     //   });
-    function generarCodigo(): number {
-      return Math.floor(100000 + Math.random() * 900000);
-    }
+
     const factura = await prisma.facturaSinInva.create({
       data: {
         code,
@@ -64,7 +64,7 @@ newRouter.post("/create", async (c, next) => {
         name,
         email,
         phone,
-        facturaId: generarCodigo(),
+        facturaId,
         address,
         dni: Number(dni),
         subTotal: Number(Number(subTotal).toFixed(2)),
