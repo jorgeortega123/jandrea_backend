@@ -4,6 +4,8 @@ import { getProducts } from "../routes/getProducts";
 import { Bindings } from "../types/types";
 import { cors } from "hono/cors";
 import newRouter from "../routes/invoice";
+import newRouterProducts from "../routes/products";
+import newRouterCategories from "../routes/categories";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -34,6 +36,7 @@ app.get("/", async (c) => {
   c.json({ text: "Hi" });
 });
 app.route("/invoice", newRouter);
-app.route("/getProducts", getProducts());
+app.route("/products", newRouterProducts);
+app.route("/categories", newRouterCategories);
 
 export default app;

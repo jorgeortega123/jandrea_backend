@@ -57,14 +57,27 @@ model DiscountSchema {
   facturaSinInvaId String
 }
 
+model Categoria {
+  id            String     @id @default(cuid()) // 👈 clave primaria
+  seoTitle      String
+  categoryId    String     @unique
+  img           String
+  imagenPrefijo String
+  title         String
+  productos     Producto[] // 1:N
+}
+
 model Producto {
   id            String              @id @default(cuid())
   cantidad      Int?
   title         String?
   description   String?
   productId     String?
-  categoryId    String
-  identificador String
+  categoryId    String // ahora referencia a Categoria.id
+  createdAt     DateTime            @default(now()) 
+  updatedAt     DateTime            @default("2025-07-14T02:46:36.459Z") @updatedAt
+  categoria     Categoria           @relation(fields: [categoryId], references: [id]) // 👈 cambia "categoryId" → "id"
+  identificador String              @unique
   docena        Boolean?
   variants      Variants_producto[]
   topicTags     TopicTag[]
