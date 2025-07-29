@@ -4,6 +4,7 @@ import prismaClients from "../src/lib/prismaClients";
 import { Producto } from "../types/Product";
 
 const newRouterProducts = new Hono<{ Bindings: Bindings }>();
+
 newRouterProducts.post("/create", async (c) => {
   const body: Producto[] = await c.req.json();
   const prisma = await prismaClients.fetch(c.env.DB);
@@ -33,7 +34,7 @@ newRouterProducts.post("/create", async (c) => {
           docena: producto.docena,
           cantidad: producto.cantidad,
           topicTags: {
-            create: producto.topicTags?.map((tag) => ({ tag })) || [],
+            create: producto.topicTag?.map((tag) => ({ tag })) || [],
           },
           variants: {
             create: producto.variants.map((variant) => ({
@@ -68,6 +69,39 @@ newRouterProducts.post("/create", async (c) => {
   } catch (err) {
     console.error(err);
     return c.json({ error: "Error al crear productos" }, 500);
+  }
+});
+newRouterProducts.get("/recomendados", async (c) => {
+  const prisma = await prismaClients.fetch(c.env.DB);
+  console.log(prisma);
+
+  try {
+    const productos = await prisma.producto.findMany({
+      where: {
+        topicTags: {
+          some: {
+            tag: { in: ["nuevo", "new"] },
+          },
+        },
+      },
+      include: {
+        variants: {
+          select: {
+            price: true,
+            priceWithoutOff: true,
+            images: {
+              take: 2,
+              select: { src: true },
+            },
+          },
+        },
+      },
+    });
+
+    return c.json({ productos });
+  } catch (error) {
+    console.error(error);
+    return c.json({ error: "Error al obtener productos recomendados" }, 500);
   }
 });
 
@@ -108,29 +142,29 @@ newRouterProducts.get("/preview", async (c) => {
     productos,
   });
 });
-newRouterProducts.get("/custom/:id", async (c) => {
-  const prisma = await prismaClients.fetch(c.env.DB);
-  const id = c.req.param("id");
+// newRouterProducts.get("/custom/:id", async (c) => {
+//   const prisma = await prismaClients.fetch(c.env.DB);
+//   const id = c.req.param("id");
 
-  const producto = await prisma.producto.findUnique({
-    where: { id },
-    include: {
-      topicTags: true,
-      variants: {
-        include: {
-          images: true,
-          colors: true,
-        },
-      },
-    },
-  });
+//   const producto = await prisma.producto.findUnique({
+//     where: { id },
+//     include: {
+//       topicTags: true,
+//       variants: {
+//         include: {
+//           images: true,
+//           colors: true,
+//         },
+//       },
+//     },
+//   });
 
-  if (!producto) {
-    return c.json({ error: "Producto no encontrado" }, 404);
-  }
+//   if (!producto) {
+//     return c.json({ error: "Producto no encontrado" }, 404);
+//   }
 
-  return c.json({ producto });
-});
+//   return c.json({ producto });
+// });
 
 newRouterProducts.get("/:categoryId", async (c) => {
   const prisma = await prismaClients.fetch(c.env.DB);
@@ -153,7 +187,7 @@ newRouterProducts.get("/:categoryId", async (c) => {
           price: true,
           priceWithoutOff: true,
           images: {
-            take: 1,
+            take: 0,
             select: { src: true },
           },
         },
@@ -214,7 +248,7 @@ newRouterProducts.patch("/:id/price", async (c) => {
   }
 });
 
-newRouterProducts.patch("/:id", async (c) => {
+newRouterProducts.patch("/edit/:id", async (c) => {
   const prisma = await prismaClients.fetch(c.env.DB);
   const id = c.req.param("id");
   const body: Partial<Producto> = await c.req.json();
@@ -235,7 +269,10 @@ newRouterProducts.patch("/:id", async (c) => {
         identificador: body.identificador,
         topicTags: {
           deleteMany: {},
-          create: body.topicTags?.map((tag) => ({ tag })) || [],
+          create:
+            body.topicTags?.map((tag) => ({
+              tag: tag.tag,
+            })) || [],
         },
         variants: {
           deleteMany: {},
@@ -245,9 +282,9 @@ newRouterProducts.patch("/:id", async (c) => {
               price: variant.price,
               priceWithoutOff: variant.priceWithoutOff,
               precioDocena: variant.precioDocena,
-              sizes_x: variant.sizes?.x,
-              sizes_y: variant.sizes?.y,
-              sizes_z: variant.sizes?.z,
+              sizes_x: variant.sizes_x,
+              sizes_y: variant.sizes_y,
+              sizes_z: variant.sizes_z,
               images: {
                 create: variant.images.map((img) => ({
                   src: img.src,
@@ -274,37 +311,31 @@ newRouterProducts.patch("/:id", async (c) => {
   }
 });
 
-newRouterProducts.get("/recomendados", async (c) => {
+newRouterProducts.get("/custom/:id", async (c) => {
   const prisma = await prismaClients.fetch(c.env.DB);
-
+  const id = c.req.param("id");
+  const skipVariant: number = Number(c.req.query("variantSkip")) ?? 0;
+  if (!skipVariant) return c.json({ error: "Error en parametro skip" }, 500);
   try {
-    const productos = await prisma.producto.findMany({
-      where: {
-        topicTags: {
-          some: {
-            tag: { in: ["nuevo", "new"] },
-          },
-        },
-      },
+    const producto = await prisma.producto.findUnique({
+      where: { id },
       include: {
+        topicTags: true,
         variants: {
-          take: 1,
-          select: {
-            price: true,
-            priceWithoutOff: true,
+          include: {
             images: {
-              take: 1,
-              select: { src: true },
+              skip: skipVariant ?? 0,
             },
+            colors: true,
           },
         },
       },
     });
-
-    return c.json({ productos });
+    console.log("first");
+    return c.json({ producto });
   } catch (error) {
     console.error(error);
-    return c.json({ error: "Error al obtener productos recomendados" }, 500);
+    return c.json({ error: "Error al obtener el producto" }, 500);
   }
 });
 export default newRouterProducts;

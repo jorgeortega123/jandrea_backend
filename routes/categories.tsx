@@ -82,8 +82,11 @@ newRouterCategories.get("/products/by-category/:categoryId", async (c) => {
       take: limit,
       include: {
         variants: {
+          take: 1,
           include: {
-            images: true,
+            images: {
+              take: 2,
+            },
           },
         }, // ajustalo si querés menos info
       },

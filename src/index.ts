@@ -6,6 +6,7 @@ import { cors } from "hono/cors";
 import newRouter from "../routes/invoice";
 import newRouterProducts from "../routes/products";
 import newRouterCategories from "../routes/categories";
+import newRouterImages from "../routes/images";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -25,6 +26,10 @@ app.use(
   })
 );
 
+app.route("/invoice", newRouter);
+app.route("/products", newRouterProducts);
+app.route("/categories", newRouterCategories);
+app.route("/images", newRouterImages);
 app.get("/", async (c) => {
   const prisma = await prismaClients.fetch(c.env.DB);
   // const res = await prisma.user.create({
@@ -35,8 +40,4 @@ app.get("/", async (c) => {
   // return c.json({ res });
   c.json({ text: "Hi" });
 });
-app.route("/invoice", newRouter);
-app.route("/products", newRouterProducts);
-app.route("/categories", newRouterCategories);
-
 export default app;
