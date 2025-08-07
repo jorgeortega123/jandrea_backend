@@ -315,7 +315,7 @@ newRouterProducts.get("/custom/:id", async (c) => {
   const prisma = await prismaClients.fetch(c.env.DB);
   const id = c.req.param("id");
   const skipVariant: number = Number(c.req.query("variantSkip")) ?? 0;
-  if (!skipVariant) return c.json({ error: "Error en parametro skip" }, 500);
+  // if (!skipVariant) return c.json({ error: "Error en parametro skip" }, 500);
   try {
     const producto = await prisma.producto.findUnique({
       where: { id },
@@ -336,6 +336,62 @@ newRouterProducts.get("/custom/:id", async (c) => {
   } catch (error) {
     console.error(error);
     return c.json({ error: "Error al obtener el producto" }, 500);
+  }
+});
+newRouterProducts.get("/custom/old/:id", async (c) => {
+  const prisma = await prismaClients.fetch(c.env.DB);
+  const id = c.req.param("id");
+  const skipVariant: number = Number(c.req.query("variantSkip")) ?? 0;
+  // if (!skipVariant) return c.json({ error: "Error en parametro skip" }, 500);
+  try {
+    const producto = await prisma.producto.findUnique({
+      where: { identificador: id },
+      include: {
+        topicTags: true,
+        variants: {
+          include: {
+            images: {
+              skip: skipVariant ?? 0,
+            },
+            colors: true,
+          },
+        },
+      },
+    });
+
+    return c.json({ producto });
+  } catch (error) {
+    console.error(error);
+    return c.json({ error: "Error al obtener el producto" }, 500);
+  }
+});
+newRouterProducts.get("/all/names", async (c) => {
+  const prisma = await prismaClients.fetch(c.env.DB);
+
+  try {
+    const productos = await prisma.producto.findMany({
+      select: {
+        id: true,
+        title: true,
+      },
+    });
+
+    return c.json({ productos }); // Devuelve un array con { id, title }
+  } catch (error) {
+    console.error(error);
+    return c.json({ error: "Error al obtener los productos" }, 500);
+  }
+});
+newRouterProducts.get("/all/length", async (c) => {
+  const prisma = await prismaClients.fetch(c.env.DB);
+
+  try {
+    const total = await prisma.producto.count();
+
+    return c.json({ length: total }); // Devuelve algo como { length: 123 }
+  } catch (error) {
+    console.error(error);
+    return c.json({ error: "Error al contar los productos" }, 500);
   }
 });
 export default newRouterProducts;

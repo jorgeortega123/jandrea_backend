@@ -4,6 +4,32 @@ import prismaClients from "../src/lib/prismaClients";
 import { Producto } from "../types/Product";
 
 const newRouterCategories = new Hono<{ Bindings: Bindings }>();
+// saber la categoria a apartir de un ID del producto
+newRouterCategories.get("/producto/:id", async (c) => {
+  const { id } = c.req.param();
+  const prisma = await prismaClients.fetch(c.env.DB);
+
+  const categoria = await prisma.categoria.findUnique({
+    where: {
+      id: id,
+    },
+  });
+
+  return c.json(categoria);
+});
+// saber la categoria a apartir de un categoryId del producto (para codig viejo)
+newRouterCategories.get("/producto/old/:id", async (c) => {
+  const { id } = c.req.param();
+  const prisma = await prismaClients.fetch(c.env.DB);
+
+  const categoria = await prisma.categoria.findUnique({
+    where: {
+      categoryId: id,
+    },
+  });
+
+  return c.json(categoria);
+});
 newRouterCategories.get("/", async (c) => {
   const prisma = await prismaClients.fetch(c.env.DB);
 
