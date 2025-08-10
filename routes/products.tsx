@@ -31,6 +31,8 @@ newRouterProducts.post("/create", async (c) => {
           categoryId: categoriaExistente.id,
           identificador: producto.identificador,
           description: producto.description,
+
+          createdAt: new Date(),
           docena: producto.docena,
           cantidad: producto.cantidad,
           topicTags: {
@@ -264,6 +266,7 @@ newRouterProducts.patch("/edit/:id", async (c) => {
       data: {
         title: body.title,
         description: body.description,
+        updatedAt: new Date(),
         cantidad: body.cantidad,
         docena: body.docena,
         identificador: body.identificador,
@@ -394,4 +397,58 @@ newRouterProducts.get("/all/length", async (c) => {
     return c.json({ error: "Error al contar los productos" }, 500);
   }
 });
+
+newRouterProducts.delete("/:id", async (c) => {
+  const prisma = await prismaClients.fetch(c.env.DB);
+  const id = c.req.param("id");
+
+  try {
+    // Verificar si el producto existe
+    const producto = await prisma.producto.findUnique({
+      where: { id },
+      include: {
+        variants: {
+          include: {
+            images: true,
+            colors: true,
+          },
+        },
+        topicTags: true,
+      },
+    });
+
+    if (!producto) {
+      return c.json({ error: "Producto no encontrado" }, 404);
+    }
+
+    // Eliminar relaciones dependientes
+    await prisma.topicTag.deleteMany({
+      where: { productoId: id },
+    });
+
+    for (const variant of producto.variants) {
+      await prisma.imagenes.deleteMany({
+        where: { variantId: variant.id },
+      });
+      await prisma.imagenes.deleteMany({
+        where: { variantId: variant.id },
+      });
+    }
+
+    await prisma.variants_producto.deleteMany({
+      where: { productoId: id },
+    });
+
+    // Eliminar el producto
+    await prisma.producto.delete({
+      where: { id },
+    });
+
+    return c.json({ message: "Producto eliminado correctamente" });
+  } catch (error) {
+    console.error(error);
+    return c.json({ error: "Error al eliminar el producto" }, 500);
+  }
+});
+
 export default newRouterProducts;

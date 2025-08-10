@@ -29,15 +29,15 @@
  "r2_buckets": [
   {
     "binding": "MY_BUCKET",
-    "bucket_name": "jandrea-productos-imagenes",
-    "preview_bucket_name": "jandrea-productos-imagenes"
+    "bucket_name": "jandrea-images",
+    "preview_bucket_name": "jandrea-images"
   }
 ],
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "jandrea-products",
-      "database_id": "e710a775-5725-4c14-8297-5b9090998277"
+      "database_name": "jandrea",
+      "database_id": "fef1843a-7621-483a-81ad-f575f05229fe"
     }
   ],
   // "ai": {

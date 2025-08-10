@@ -21,23 +21,27 @@ app.use(
       ];
       return allowedOrigins.includes(origin ?? "") ? origin : "";
     },
-    allowMethods: ["GET", "POST", "OPTIONS", "PATCH"],
+    allowMethods: ["GET", "POST", "OPTIONS", "PATCH", "DELETE", "PUT"],
     allowHeaders: ["Content-Type", "Authorization"],
   })
 );
+// const validarClave = async (c: Context, next: Next) => {
+//   const clave = c.req.header("x-api-key"); // clave enviada en header
+//   if (clave === "03080308") {
+//     await next(); // Deja pasar
+//   } else {
+//     return c.json({ error: "No autorizado" }, 401);
+//   }
+// };
 
+app.get("/", async (c) => {
+  c.json({ text: "Hi" });
+});
 app.route("/invoice", newRouter);
 app.route("/products", newRouterProducts);
 app.route("/categories", newRouterCategories);
 app.route("/images", newRouterImages);
-app.get("/", async (c) => {
-  const prisma = await prismaClients.fetch(c.env.DB);
-  // const res = await prisma.user.create({
-  //   data: {
-  //     email: "fdhbvxfj",
-  //   },
-  // });
-  // return c.json({ res });
-  c.json({ text: "Hi" });
-});
+
+app.route("/images", newRouterImages);
+
 export default app;

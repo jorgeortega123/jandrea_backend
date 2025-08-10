@@ -46,6 +46,7 @@ newRouterCategories.post("/create", async (c) => {
   }
 
   for (const cat of body) {
+    console.log(cat);
     await prisma.categoria.upsert({
       where: { categoryId: cat.categoryId },
       update: {}, // no actualiza si ya existe
@@ -53,7 +54,7 @@ newRouterCategories.post("/create", async (c) => {
         seoTitle: cat.seoTitle,
         categoryId: cat.categoryId,
         img: cat.img,
-        imagenPrefijo: cat.imagenPrefijo,
+        imagenPrefijo: cat.imagenPrefijo ?? "",
         title: cat.title,
       },
     });
@@ -88,6 +89,49 @@ newRouterCategories.get("/img/from/producto/:id", async (c) => {
   }
 });
 
+// newRouterCategories.get("/products/by-category/:categoryId", async (c) => {
+//   const prisma = await prismaClients.fetch(c.env.DB);
+
+//   const { categoryId } = c.req.param();
+//   const page = parseInt(c.req.query("page") || "1");
+//   const limit = parseInt(c.req.query("limit") || "5");
+
+//   if (!categoryId) {
+//     return c.json({ error: "Falta categoryId" }, 400);
+//   }
+
+//   const skip = (page - 1) * limit;
+
+//   try {
+//     const productos = await prisma.producto.findMany({
+//       where: { categoryId },
+//       skip,
+//       take: limit,
+//       include: {
+//         variants: {
+//           take: 1,
+//           include: {
+//             images: {
+//               take: 2,
+//             },
+//           },
+//         }, // ajustalo si querés menos info
+//       },
+//     });
+
+//     const total = await prisma.producto.count({
+//       where: { categoryId },
+//     });
+
+//     const hasNextPage = skip + productos.length < total;
+
+//     return c.json({ productos, hasNextPage });
+//   } catch (error) {
+//     console.error(error);
+//     return c.json({ error: "Error al obtener productos" }, 500);
+//   }
+// });
+
 newRouterCategories.get("/products/by-category/:categoryId", async (c) => {
   const prisma = await prismaClients.fetch(c.env.DB);
 
@@ -95,17 +139,32 @@ newRouterCategories.get("/products/by-category/:categoryId", async (c) => {
   const page = parseInt(c.req.query("page") || "1");
   const limit = parseInt(c.req.query("limit") || "5");
 
+  const sortByPrice = c.req.query("sortByPrice"); // "asc" o "desc"
+  const sortByDate = c.req.query("sortByDate"); // "asc" o "desc"
+
   if (!categoryId) {
     return c.json({ error: "Falta categoryId" }, 400);
   }
 
   const skip = (page - 1) * limit;
 
+  // Armado dinámico del ordenamiento
+  const orderBy: any[] = [];
+
+  if (sortByPrice === "asc" || sortByPrice === "desc") {
+    orderBy.push({ price: sortByPrice });
+  }
+
+  if (sortByDate === "asc" || sortByDate === "desc") {
+    orderBy.push({ createdAt: sortByDate });
+  }
+
   try {
     const productos = await prisma.producto.findMany({
       where: { categoryId },
       skip,
       take: limit,
+      orderBy: orderBy.length > 0 ? orderBy : undefined, // solo si se pasa algo
       include: {
         variants: {
           take: 1,
@@ -114,7 +173,7 @@ newRouterCategories.get("/products/by-category/:categoryId", async (c) => {
               take: 2,
             },
           },
-        }, // ajustalo si querés menos info
+        },
       },
     });
 
@@ -128,6 +187,52 @@ newRouterCategories.get("/products/by-category/:categoryId", async (c) => {
   } catch (error) {
     console.error(error);
     return c.json({ error: "Error al obtener productos" }, 500);
+  }
+});
+newRouterCategories.put("/update/:categoryId", async (c) => {
+  const { categoryId } = c.req.param();
+  const prisma = await prismaClients.fetch(c.env.DB);
+  const body = await c.req.json();
+
+  // Validar que el body tenga al menos un campo válido para actualizar
+  const allowedFields = ["seoTitle", "img", "imagenPrefijo", "title"];
+  const updateData: Record<string, any> = {};
+
+  for (const field of allowedFields) {
+    if (body[field] !== undefined) {
+      updateData[field] = body[field];
+    }
+  }
+
+  if (Object.keys(updateData).length === 0) {
+    return c.json(
+      { error: "No se proporcionaron campos válidos para actualizar" },
+      400
+    );
+  }
+
+  try {
+    const updatedCategory = await prisma.categoria.update({
+      where: { categoryId },
+      data: updateData,
+    });
+
+    return c.json({
+      message: "Categoría actualizada correctamente",
+      category: updatedCategory,
+    });
+  } catch (error) {
+    // Manejar error si no existe categoría con ese categoryId
+    console.error(error);
+
+    if (
+      error instanceof Error &&
+      error.message.includes("Record to update not found")
+    ) {
+      return c.json({ error: "Categoría no encontrada" }, 404);
+    }
+
+    return c.json({ error: "Error al actualizar la categoría" }, 500);
   }
 });
 
