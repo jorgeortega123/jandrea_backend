@@ -7,11 +7,11 @@ export interface imagenes {
 export interface Variants_producto {
   description?: string;
   images: imagenes[];
-  sizes?: {
-    x: number;
-    y: number;
-    z: number;
-  };
+
+  sizes_x: number;
+  sizes_y: number;
+  sizes_z: number;
+
   precioDocena?: number;
   price: number;
   priceWithoutOff: number;
@@ -25,7 +25,8 @@ export interface Producto {
   productId?: string;
   categoryId: string;
   identificador: string;
-  topicTags?: { tag: string[] };
+  topicTag?: { tag: string[] };
+  topicTags?: { tag: string };
   docena?: boolean;
   variants: Variants_producto[];
 }

@@ -31,7 +31,7 @@ newRouterProducts.post("/create", async (c) => {
           categoryId: categoriaExistente.id,
           identificador: producto.identificador,
           description: producto.description,
-
+          price: producto.variants[0].price,
           createdAt: new Date(),
           docena: producto.docena,
           cantidad: producto.cantidad,
@@ -75,7 +75,7 @@ newRouterProducts.post("/create", async (c) => {
 });
 newRouterProducts.get("/recomendados", async (c) => {
   const prisma = await prismaClients.fetch(c.env.DB);
-  console.log(prisma);
+  console.log(1);
 
   try {
     const productos = await prisma.producto.findMany({
@@ -87,6 +87,7 @@ newRouterProducts.get("/recomendados", async (c) => {
         },
       },
       include: {
+        topicTags: true,
         variants: {
           select: {
             price: true,
@@ -99,6 +100,7 @@ newRouterProducts.get("/recomendados", async (c) => {
         },
       },
     });
+    console.log(2);
 
     return c.json({ productos });
   } catch (error) {
@@ -356,7 +358,6 @@ newRouterProducts.get("/custom/old/:id", async (c) => {
             images: {
               skip: skipVariant ?? 0,
             },
-            colors: true,
           },
         },
       },

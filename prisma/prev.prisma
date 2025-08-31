@@ -73,9 +73,12 @@ model Producto {
   title         String?
   description   String?
   productId     String?
-  categoryId    String              // ahora referencia a Categoria.id
+  categoryId    String // ahora referencia a Categoria.id
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @default("2025-07-14T02:46:36.459Z") @updatedAt
   categoria     Categoria           @relation(fields: [categoryId], references: [id]) // 👈 cambia "categoryId" → "id"
-  identificador String 
+ 
+  identificador String              @unique
   docena        Boolean?
   variants      Variants_producto[]
   topicTags     TopicTag[]
