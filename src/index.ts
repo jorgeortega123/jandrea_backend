@@ -7,6 +7,7 @@ import newRouter from "../routes/invoice";
 import newRouterProducts from "../routes/products";
 import newRouterCategories from "../routes/categories";
 import newRouterImages from "../routes/images";
+import newRouterVideos from "../routes/videos";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -41,7 +42,6 @@ app.route("/invoice", newRouter);
 app.route("/products", newRouterProducts);
 app.route("/categories", newRouterCategories);
 app.route("/images", newRouterImages);
-
-app.route("/images", newRouterImages);
+app.route("/videos", newRouterVideos);
 
 export default app;

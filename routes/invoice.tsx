@@ -25,12 +25,7 @@ newRouter.post("/create", async (c, next) => {
 
   // Validar campos requeridos
   const requiredFields = [
-    // { field: "code", name: "código" },
     { field: "name", name: "nombre" },
-    // { field: "email", name: "email" },
-    // { field: "phone", name: "teléfono" },
-    // { field: "address", name: "dirección" },
-    // { field: "dni", name: "DNI" },
     { field: "subTotal", name: "subtotal" },
     { field: "facturaId", name: "facturaId" },
     { field: "total", name: "total" },
@@ -50,12 +45,6 @@ newRouter.post("/create", async (c, next) => {
       400
     );
   try {
-    // ENCONTRAR PRODUCTO
-    //   prisma.facturaSinInva.findUnique({
-    //     where: { id: 1 },
-    //     include: { products: {}, discounts: {} },
-    //   });
-
     const factura = await prisma.facturaSinInva.create({
       data: {
         code,
@@ -142,4 +131,41 @@ newRouter.patch("/updateState", async (c, next) => {
     });
   }
 });
+newRouter.delete("/delete", async (c) => {
+  const prisma = await prismaClients.fetch(c.env.DB);
+  const { id } = await c.req.json();
+
+  if (!id) {
+    return c.json({ success: false, error: "No existe ID" }, 400);
+  }
+
+  try {
+    // Primero eliminar hijos
+    await prisma.productSchema.deleteMany({
+      where: { facturaSinInvaId: id },
+    });
+
+    await prisma.discountSchema.deleteMany({
+      where: { facturaSinInvaId: id },
+    });
+
+    // Luego eliminar la factura
+    const facturaEliminada = await prisma.facturaSinInva.delete({
+      where: { id },
+    });
+
+    return c.json({
+      success: true,
+      message: "Factura eliminada con sus productos y descuentos",
+      factura: facturaEliminada,
+    });
+  } catch (error) {
+    console.error(error);
+    return c.json(
+      { success: false, error: "Error al eliminar la factura", date: error },
+      500
+    );
+  }
+});
+
 export default newRouter;

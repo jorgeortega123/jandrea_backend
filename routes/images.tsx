@@ -15,9 +15,7 @@ newRouterImages.post("/upload", async (c) => {
   if (!file.name.match(/\.(jpg|jpeg|png|gif|webp|mp4)$/i)) {
     return c.json({ error: "Formato de imagen no soportado" }, 400);
   }
-  // Puedes devolver la URL pública si tienes R2 con dominio público
 
-  //   const extension = file.name.split(".").pop();
   const uniqueKey = `${crypto.randomUUID()}`;
 
   await c.env.MY_BUCKET.put(uniqueKey, await file.arrayBuffer(), {
@@ -29,10 +27,6 @@ newRouterImages.post("/upload", async (c) => {
     key: uniqueKey,
     url: `${c.req.url.replace(/\/upload$/, "")}/image/${uniqueKey}`,
   });
-  //   return c.json({
-  //     message: "Imagen subida",
-  //     key: `https://jandrea-backend.database-jorge.workers.dev/images/image/${file.name}`,
-  //   });
 });
 
 newRouterImages.get("/image/:key", async (c) => {
