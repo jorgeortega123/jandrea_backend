@@ -18,7 +18,7 @@ app.use(
       const allowedOrigins = [
         "https://jandrea.art",
         "https://www.jandrea.art",
-        "http://localhost:3000",
+        "https://jorgeortega.vercel.app/",
       ];
       return allowedOrigins.includes(origin ?? "") ? origin : "";
     },

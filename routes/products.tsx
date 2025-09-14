@@ -73,9 +73,28 @@ newRouterProducts.post("/create", async (c) => {
     return c.json({ error: "Error al crear productos" }, 500);
   }
 });
+////////////////////////
 newRouterProducts.get("/recomendados", async (c) => {
   const prisma = await prismaClients.fetch(c.env.DB);
-  console.log(1);
+
+  // Query params
+  const sortByUpdate = c.req.query("sortByUpdate"); // "asc" | "desc"
+  const sortByCreated = c.req.query("sortByCreated"); // "asc" | "desc"
+  const page = parseInt(c.req.query("page") || "1");
+  const limit = parseInt(c.req.query("limit") || "5");
+
+  const skip = (page - 1) * limit;
+
+  // Armado dinámico del ordenamiento
+  const orderBy: any[] = [];
+
+  if (sortByUpdate === "asc" || sortByUpdate === "desc") {
+    orderBy.push({ updatedAt: sortByUpdate });
+  }
+
+  if (sortByCreated === "asc" || sortByCreated === "desc") {
+    orderBy.push({ createdAt: sortByCreated });
+  }
 
   try {
     const productos = await prisma.producto.findMany({
@@ -86,6 +105,9 @@ newRouterProducts.get("/recomendados", async (c) => {
           },
         },
       },
+      skip,
+      take: limit,
+      orderBy: orderBy.length > 0 ? orderBy : undefined,
       include: {
         topicTags: true,
         variants: {
@@ -100,9 +122,20 @@ newRouterProducts.get("/recomendados", async (c) => {
         },
       },
     });
-    console.log(2);
 
-    return c.json({ productos });
+    const total = await prisma.producto.count({
+      where: {
+        topicTags: {
+          some: {
+            tag: { in: ["nuevo", "new"] },
+          },
+        },
+      },
+    });
+
+    const hasNextPage = skip + productos.length < total;
+
+    return c.json({ productos, hasNextPage });
   } catch (error) {
     console.error(error);
     return c.json({ error: "Error al obtener productos recomendados" }, 500);

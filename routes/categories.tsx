@@ -189,6 +189,8 @@ newRouterCategories.get("/products/by-category/:categoryId", async (c) => {
     return c.json({ error: "Error al obtener productos" }, 500);
   }
 });
+
+
 newRouterCategories.put("/update/:categoryId", async (c) => {
   const { categoryId } = c.req.param();
   const prisma = await prismaClients.fetch(c.env.DB);
