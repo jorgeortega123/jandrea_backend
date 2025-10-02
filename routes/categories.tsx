@@ -169,6 +169,9 @@ newRouterCategories.get("/products/by-category/:categoryId", async (c) => {
         variants: {
           take: 1,
           include: {
+            colors: {
+              take: 1,
+            },
             images: {
               take: 2,
             },
@@ -189,7 +192,6 @@ newRouterCategories.get("/products/by-category/:categoryId", async (c) => {
     return c.json({ error: "Error al obtener productos" }, 500);
   }
 });
-
 
 newRouterCategories.put("/update/:categoryId", async (c) => {
   const { categoryId } = c.req.param();
