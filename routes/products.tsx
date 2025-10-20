@@ -101,6 +101,74 @@ newRouterProducts.get("/recomendados", async (c) => {
       where: {
         topicTags: {
           some: {
+            tag: { in: ["recomendado", "recommended"] },
+          },
+        },
+      },
+      skip,
+      take: limit,
+      orderBy: orderBy.length > 0 ? orderBy : undefined,
+      include: {
+        topicTags: true,
+        variants: {
+          select: {
+            price: true,
+            priceWithoutOff: true,
+            images: {
+              take: 2,
+              select: { src: true },
+            },
+          },
+        },
+      },
+    });
+
+    const total = await prisma.producto.count({
+      where: {
+        topicTags: {
+          some: {
+            tag: { in: ["recomendado", "recommended"] },
+          },
+        },
+      },
+    });
+
+    const hasNextPage = skip + productos.length < total;
+
+    return c.json({ productos, hasNextPage });
+  } catch (error) {
+    console.error(error);
+    return c.json({ error: "Error al obtener productos recomendados" }, 500);
+  }
+});
+
+newRouterProducts.get("/nuevos", async (c) => {
+  const prisma = await prismaClients.fetch(c.env.DB);
+
+  // Query params
+  const sortByUpdate = c.req.query("sortByUpdate"); // "asc" | "desc"
+  const sortByCreated = c.req.query("sortByCreated"); // "asc" | "desc"
+  const page = parseInt(c.req.query("page") || "1");
+  const limit = parseInt(c.req.query("limit") || "5");
+
+  const skip = (page - 1) * limit;
+
+  // Armado dinámico del ordenamiento
+  const orderBy: any[] = [];
+
+  if (sortByUpdate === "asc" || sortByUpdate === "desc") {
+    orderBy.push({ updatedAt: sortByUpdate });
+  }
+
+  if (sortByCreated === "asc" || sortByCreated === "desc") {
+    orderBy.push({ createdAt: sortByCreated });
+  }
+
+  try {
+    const productos = await prisma.producto.findMany({
+      where: {
+        topicTags: {
+          some: {
             tag: { in: ["nuevo", "new"] },
           },
         },
@@ -138,7 +206,65 @@ newRouterProducts.get("/recomendados", async (c) => {
     return c.json({ productos, hasNextPage });
   } catch (error) {
     console.error(error);
-    return c.json({ error: "Error al obtener productos recomendados" }, 500);
+    return c.json({ error: "Error al obtener productos nuevos" }, 500);
+  }
+});
+
+newRouterProducts.get("/recientes", async (c) => {
+  const prisma = await prismaClients.fetch(c.env.DB);
+
+  // Query params
+  const sortByUpdate = c.req.query("sortByUpdate"); // "asc" | "desc"
+  const sortByCreated = c.req.query("sortByCreated"); // "asc" | "desc"
+  const page = parseInt(c.req.query("page") || "1");
+  const limit = parseInt(c.req.query("limit") || "5");
+
+  const skip = (page - 1) * limit;
+
+  // Armado dinámico del ordenamiento
+  const orderBy: any[] = [];
+
+  if (sortByUpdate === "asc" || sortByUpdate === "desc") {
+    orderBy.push({ updatedAt: sortByUpdate });
+  }
+
+  if (sortByCreated === "asc" || sortByCreated === "desc") {
+    orderBy.push({ createdAt: sortByCreated });
+  }
+
+  // Si no se especifica ordenamiento, ordenar por fecha de creación descendente por defecto
+  if (orderBy.length === 0) {
+    orderBy.push({ createdAt: "desc" });
+  }
+
+  try {
+    const productos = await prisma.producto.findMany({
+      skip,
+      take: limit,
+      orderBy,
+      include: {
+        topicTags: true,
+        variants: {
+          select: {
+            price: true,
+            priceWithoutOff: true,
+            images: {
+              take: 2,
+              select: { src: true },
+            },
+          },
+        },
+      },
+    });
+
+    const total = await prisma.producto.count();
+
+    const hasNextPage = skip + productos.length < total;
+
+    return c.json({ productos, hasNextPage });
+  } catch (error) {
+    console.error(error);
+    return c.json({ error: "Error al obtener productos recientes" }, 500);
   }
 });
 

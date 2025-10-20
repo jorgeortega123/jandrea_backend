@@ -5,6 +5,14 @@ import { Producto } from "../types/Product";
 
 const newRouterCategories = new Hono<{ Bindings: Bindings }>();
 // saber la categoria a apartir de un ID del producto
+
+newRouterCategories.get("/", async (c) => {
+  const prisma = await prismaClients.fetch(c.env.DB);
+
+  const categorias = await prisma.categoria.findMany();
+
+  return c.json(categorias);
+});
 newRouterCategories.get("/producto/:id", async (c) => {
   const { id } = c.req.param();
   const prisma = await prismaClients.fetch(c.env.DB);
@@ -30,13 +38,7 @@ newRouterCategories.get("/producto/old/:id", async (c) => {
 
   return c.json(categoria);
 });
-newRouterCategories.get("/", async (c) => {
-  const prisma = await prismaClients.fetch(c.env.DB);
 
-  const categorias = await prisma.categoria.findMany();
-
-  return c.json(categorias);
-});
 newRouterCategories.post("/create", async (c) => {
   const prisma = await prismaClients.fetch(c.env.DB);
   const body = await c.req.json();
@@ -192,7 +194,50 @@ newRouterCategories.get("/products/by-category/:categoryId", async (c) => {
     return c.json({ error: "Error al obtener productos" }, 500);
   }
 });
+newRouterCategories.get("/products/by-category/:categoryId/all", async (c) => {
+  const prisma = await prismaClients.fetch(c.env.DB);
 
+  const { categoryId } = c.req.param();
+  const page = parseInt(c.req.query("page") || "1");
+  const limit = parseInt(c.req.query("limit") || "5");
+
+  const sortByPrice = c.req.query("sortByPrice"); // "asc" o "desc"
+  const sortByDate = c.req.query("sortByDate"); // "asc" o "desc"
+
+  if (!categoryId) {
+    return c.json({ error: "Falta categoryId" }, 400);
+  }
+
+  const skip = (page - 1) * limit;
+
+  // Armado dinámico del ordenamiento
+  const orderBy: any[] = [];
+
+  if (sortByPrice === "asc" || sortByPrice === "desc") {
+    orderBy.push({ price: sortByPrice });
+  }
+
+  if (sortByDate === "asc" || sortByDate === "desc") {
+    orderBy.push({ createdAt: sortByDate });
+  }
+
+  try {
+    const productos = await prisma.producto.findMany({
+      where: { categoryId },
+    });
+
+    const total = await prisma.producto.count({
+      where: { categoryId },
+    });
+
+    const hasNextPage = skip + productos.length < total;
+
+    return c.json({ productos, hasNextPage });
+  } catch (error) {
+    console.error(error);
+    return c.json({ error: "Error al obtener productos" }, 500);
+  }
+});
 newRouterCategories.put("/update/:categoryId", async (c) => {
   const { categoryId } = c.req.param();
   const prisma = await prismaClients.fetch(c.env.DB);
