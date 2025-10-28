@@ -8,6 +8,7 @@ import newRouterProducts from "../routes/products";
 import newRouterCategories from "../routes/categories";
 import newRouterImages from "../routes/images";
 import newRouterVideos from "../routes/videos";
+import newRouterRespuestas from "../routes/mensajes";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -45,5 +46,6 @@ app.route("/products", newRouterProducts);
 app.route("/categories", newRouterCategories);
 app.route("/images", newRouterImages);
 app.route("/videos", newRouterVideos);
+app.route("/respuestas", newRouterRespuestas);
 
 export default app;

@@ -37,6 +37,13 @@ model FacturaSinInva {
   discounts DiscountSchema[]
 }
 
+model RespuestaPredefinidasSchema {
+  id        Int      @id @default(autoincrement())
+  mensaje   String
+  respuesta String
+  createdAt DateTime @default(now())
+}
+
 model ProductSchema {
   id               Int            @id @default(autoincrement())
   productId        String?
@@ -77,7 +84,7 @@ model Producto {
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @default("2025-07-14T02:46:36.459Z") @updatedAt
   categoria     Categoria           @relation(fields: [categoryId], references: [id]) // 👈 cambia "categoryId" → "id"
- 
+  price         Float               @default(0)
   identificador String              @unique
   docena        Boolean?
   variants      Variants_producto[]

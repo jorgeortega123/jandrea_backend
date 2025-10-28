@@ -143,6 +143,7 @@ newRouterCategories.get("/products/by-category/:categoryId", async (c) => {
 
   const sortByPrice = c.req.query("sortByPrice"); // "asc" o "desc"
   const sortByDate = c.req.query("sortByDate"); // "asc" o "desc"
+  const showAllProducto = c.req.query("all"); // "asc" o "desc"
 
   if (!categoryId) {
     return c.json({ error: "Falta categoryId" }, 400);
@@ -162,25 +163,33 @@ newRouterCategories.get("/products/by-category/:categoryId", async (c) => {
   }
 
   try {
-    const productos = await prisma.producto.findMany({
-      where: { categoryId },
-      skip,
-      take: limit,
-      orderBy: orderBy.length > 0 ? orderBy : undefined, // solo si se pasa algo
-      include: {
-        variants: {
-          take: 1,
-          include: {
-            colors: {
-              take: 1,
-            },
-            images: {
-              take: 2,
+    var productos: any[] = [];
+    if (showAllProducto) {
+      productos = await prisma.producto.findMany({
+        where: { categoryId },
+        orderBy: orderBy.length > 0 ? orderBy : undefined, // solo si se pasa algo
+      });
+    } else {
+      productos = await prisma.producto.findMany({
+        where: { categoryId },
+        skip,
+        take: limit,
+        orderBy: orderBy.length > 0 ? orderBy : undefined, // solo si se pasa algo
+        include: {
+          variants: {
+            take: 1,
+            include: {
+              colors: {
+                take: 1,
+              },
+              images: {
+                take: 2,
+              },
             },
           },
         },
-      },
-    });
+      });
+    }
 
     const total = await prisma.producto.count({
       where: { categoryId },

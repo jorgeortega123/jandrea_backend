@@ -1,8 +1,8 @@
 {
   "name": "jandrea-backend",
   "scripts": {
-    "migration": "npx prisma migrate diff --from-schema-datamodel  ./prisma/prev.prisma  --to-schema-datamodel ./prisma/schema.prisma  --script --output migrations/migrationDb1.sql",
-    "migrationEmpty": "npx prisma migrate diff --from-empty --to-schema-datamodel ./prisma/schema.prisma  --script --output migrations/migrationDb.sql",
+    "migration": "npx prisma migrate diff --from-schema-datamodel  ./prisma/prev.prisma  --to-schema-datamodel ./prisma/schema.prisma  --script --output migrations/migrationDb3.sql",
+    "migrationEmpty": "npx prisma migrate diff --from-empty --to-schema-datamodel ./prisma/schema.prisma  --script --output migrations/migrationDb3.sql",
     "database": "npx wrangler d1 migrations apply jandrea --remote",
     "generate":"pnpm prisma generate",
     "dev": " wrangler dev --remote",

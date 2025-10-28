@@ -142,6 +142,10 @@ newRouterProducts.get("/recomendados", async (c) => {
   }
 });
 
+newRouterProducts.get("similares", async (c) => {
+  const prisma = await prismaClients.fetch(c.env.DB);
+});
+
 newRouterProducts.get("/nuevos", async (c) => {
   const prisma = await prismaClients.fetch(c.env.DB);
 
