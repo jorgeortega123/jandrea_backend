@@ -142,8 +142,103 @@ newRouterProducts.get("/recomendados", async (c) => {
   }
 });
 
-newRouterProducts.get("similares", async (c) => {
+newRouterProducts.post("/similares", async (c) => {
   const prisma = await prismaClients.fetch(c.env.DB);
+
+  const limitCategories = parseInt(c.req.query("limitCategories") || "4");
+  const limitTags = parseInt(c.req.query("limitTags") || "4");
+
+  try {
+    // Obtener el producto del body
+    const body = await c.req.json();
+    const producto = body.producto || body;
+
+    if (!producto || !producto.id || !producto.categoryId) {
+      return c.json(
+        { error: "Producto inválido o faltan campos requeridos (id, categoryId)" },
+        400
+      );
+    }
+
+    // Extraer los tags del producto
+    const tags = producto.topicTags?.map((t: any) => t.tag) || [];
+
+    console.log("Producto recibido:", producto.id);
+    console.log("CategoryId:", producto.categoryId);
+    console.log("Tags:", tags);
+
+    // 1. Productos de la misma categoría (excluyendo el producto actual)
+    const productosCategoria = await prisma.producto.findMany({
+      where: {
+        categoryId: producto.categoryId,
+        id: { not: producto.id },
+      },
+      include: {
+        topicTags: true,
+        variants: {
+          select: {
+            price: true,
+            priceWithoutOff: true,
+            images: {
+              take: 2,
+              select: { src: true },
+            },
+          },
+        },
+      },
+    });
+
+    console.log("Productos por categoría encontrados:", productosCategoria.length);
+
+    // 2. Productos con tags similares (excluyendo el producto actual y los de la categoría)
+    const idsCategoria = productosCategoria.map((p) => p.id);
+
+    let productosTags: any[] = [];
+    if (tags.length > 0) {
+      productosTags = await prisma.producto.findMany({
+        where: {
+          topicTags: {
+            some: {
+              tag: { in: tags },
+            },
+          },
+          id: {
+            not: producto.id,
+            notIn: idsCategoria, // Excluir productos ya incluidos en fromCategories
+          },
+        },
+        include: {
+          topicTags: true,
+          variants: {
+            select: {
+              price: true,
+              priceWithoutOff: true,
+              images: {
+                take: 2,
+                select: { src: true },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    console.log("Productos por tags encontrados:", productosTags.length);
+
+    // Función para aleatorizar y limitar
+    const shuffleAndLimit = (arr: any[], limit: number) => {
+      const shuffled = arr.sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, limit);
+    };
+
+    return c.json({
+      fromCategories: shuffleAndLimit(productosCategoria, limitCategories),
+      fromTags: shuffleAndLimit(productosTags, limitTags),
+    });
+  } catch (error) {
+    console.error(error);
+    return c.json({ error: "Error al obtener productos similares" }, 500);
+  }
 });
 
 newRouterProducts.get("/nuevos", async (c) => {
