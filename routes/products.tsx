@@ -155,7 +155,10 @@ newRouterProducts.post("/similares", async (c) => {
 
     if (!producto || !producto.id || !producto.categoryId) {
       return c.json(
-        { error: "Producto inválido o faltan campos requeridos (id, categoryId)" },
+        {
+          error:
+            "Producto inválido o faltan campos requeridos (id, categoryId)",
+        },
         400
       );
     }
@@ -188,7 +191,10 @@ newRouterProducts.post("/similares", async (c) => {
       },
     });
 
-    console.log("Productos por categoría encontrados:", productosCategoria.length);
+    console.log(
+      "Productos por categoría encontrados:",
+      productosCategoria.length
+    );
 
     // 2. Productos con tags similares (excluyendo el producto actual y los de la categoría)
     const idsCategoria = productosCategoria.map((p) => p.id);
@@ -372,11 +378,12 @@ newRouterProducts.get("/preview", async (c) => {
 
   const page = Number(c.req.query("page") || "1");
   const limit = Number(c.req.query("limit") || "10");
+  const all = c.req.query("all") === "true";
   const skip = (page - 1) * limit;
 
   const productos = await prisma.producto.findMany({
-    skip,
-    take: limit,
+    skip: all ? undefined : skip,
+    take: all ? undefined : limit,
     select: {
       id: true,
       title: true,
@@ -399,8 +406,9 @@ newRouterProducts.get("/preview", async (c) => {
   });
 
   return c.json({
-    page,
-    limit,
+    page: all ? 1 : page,
+    limit: all ? productos.length : limit,
+    total: productos.length,
     productos,
   });
 });
