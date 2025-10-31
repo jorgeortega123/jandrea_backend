@@ -390,12 +390,12 @@ newRouterProducts.get("/preview", async (c) => {
       identificador: true,
       categoryId: true,
       variants: {
-        take: 1,
+        take: all ? undefined : 1,
         select: {
           price: true,
           priceWithoutOff: true,
           images: {
-            take: 1,
+            take: all ? undefined : 1,
             select: {
               src: true,
             },
