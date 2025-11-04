@@ -387,14 +387,20 @@ newRouterProducts.get("/preview", async (c) => {
     select: {
       id: true,
       title: true,
+      description: all ? true : false,
       identificador: true,
       categoryId: true,
       variants: {
         take: all ? undefined : 1,
         select: {
+          sizes_x: all ? true : false,
+          sizes_y: all ? true : false,
+          sizes_z: all ? true : false,
+          colors: all ? true : false,
           price: true,
           priceWithoutOff: true,
           images: {
+            skip: 1,
             take: all ? undefined : 1,
             select: {
               src: true,
