@@ -20,6 +20,7 @@ model FacturaSinInva {
   facturaId   Float     @default(0)
   code        String?
   valueCupon  Float?
+  isUsedCupon Boolean   @default(false)
   expireCupon DateTime? @default("2025-07-14T02:46:36.459Z")
   name        String
   email       String?
@@ -88,7 +89,9 @@ model Producto {
   identificador String              @unique
   docena        Boolean?
   variants      Variants_producto[]
-  topicTags     TopicTag[]
+
+  topicTags    TopicTag[]
+  recomendados ProductoRecomendado[]
 }
 
 model TopicTag {
@@ -128,4 +131,27 @@ model Colors {
   color     String
   variantId String
   variant   Variants_producto @relation(fields: [variantId], references: [id], onDelete: Cascade)
+}
+
+model ProductoRecomendado {
+  id            String   @id @default(cuid())
+  productoId    String // ID del producto principal
+  recomendadoId String // ID del producto recomendado
+  createdAt     DateTime @default(now())
+
+  producto Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+
+  @@unique([productoId, recomendadoId])
+  @@index([productoId])
+}
+
+model UsuarioClub {
+  id        String   @id @default(cuid())
+  nombre    String
+  email     String   @unique
+  telefono  String?
+  cedula    String?
+  nivel     Int?
+  avance    Int?     @default(2)
+  createdAt DateTime @default(now())
 }
