@@ -155,3 +155,11 @@ model UsuarioClub {
   avance    Int?     @default(2)
   createdAt DateTime @default(now())
 }
+
+model MaterialesJandre {
+  id           String   @id @default(cuid())
+  nombre       String?
+  tipo         String?
+  costoPlancha Float?
+  createdAt    DateTime @default(now())
+}

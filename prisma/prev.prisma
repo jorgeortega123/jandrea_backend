@@ -147,11 +147,11 @@ model ProductoRecomendado {
 
 model UsuarioClub {
   id        String   @id @default(cuid())
-  nombre    String
-  email     String   @unique
+  nombre    String?
+  email     String?  @unique
   telefono  String?
   cedula    String?
-  nivel     Int?
+  nivel     Int?     @default(1)
   avance    Int?     @default(2)
   createdAt DateTime @default(now())
 }

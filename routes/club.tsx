@@ -11,7 +11,10 @@ newRouterClub.get("/verificar-factura", async (c) => {
   const facturaId = c.req.query("id");
 
   if (!facturaId) {
-    return c.json({ error: "El parámetro 'id' es requerido" }, 400);
+    return c.json(
+      { success: false, error: "El parámetro 'id' es requerido" },
+      400
+    );
   }
 
   try {
@@ -20,7 +23,7 @@ newRouterClub.get("/verificar-factura", async (c) => {
     });
 
     if (!factura) {
-      return c.json({ error: "Factura no encontrada" }, 404);
+      return c.json({ success: false, error: "Factura no encontrada" }, 404);
     }
 
     // Verificar si el cupón es válido (no ha sido usado)
@@ -36,7 +39,10 @@ newRouterClub.get("/verificar-factura", async (c) => {
     });
   } catch (error) {
     console.error(error);
-    return c.json({ error: "Error al verificar el cupón" }, 500);
+    return c.json(
+      { success: false, error: "Error al verificar el cupón" },
+      500
+    );
   }
 });
 
@@ -48,7 +54,10 @@ newRouterClub.post("/registrar-factura", async (c) => {
     const { id, code, nombre, email, telefono, cedula } = await c.req.json();
 
     if (!code) {
-      return c.json({ error: "El campo 'code' es requerido" }, 400);
+      return c.json(
+        { success: false, error: "El campo 'code' es requerido" },
+        400
+      );
     }
 
     // 1. Verificar que la factura existe con ese code
@@ -57,12 +66,13 @@ newRouterClub.post("/registrar-factura", async (c) => {
     });
 
     if (!factura) {
-      return c.json({ error: "Factura no encontrada" }, 404);
+      return c.json({ success: false, error: "Factura no encontrada" }, 404);
     }
 
     if (factura.dni != 0 && factura.dni !== cedula) {
       return c.json(
         {
+          success: false,
           error:
             "No se puede acreditar el avance a otro cédula que no sea de la factura",
         },
@@ -72,7 +82,10 @@ newRouterClub.post("/registrar-factura", async (c) => {
 
     // 2. Verificar que el cupón no ha sido usado
     if ((factura as any).isUsedCupon === true) {
-      return c.json({ error: "Este cupón ya ha sido utilizado" }, 400);
+      return c.json(
+        { success: false, error: "Este cupón ya ha sido utilizado" },
+        400
+      );
     }
 
     // 3. Buscar o crear el usuario
@@ -95,6 +108,7 @@ newRouterClub.post("/registrar-factura", async (c) => {
       if (!nombre || !email) {
         return c.json(
           {
+            success: false,
             error:
               "Para crear un nuevo usuario se requieren 'nombre' y 'email'",
           },
@@ -131,6 +145,7 @@ newRouterClub.post("/registrar-factura", async (c) => {
     });
 
     return c.json({
+      success: true,
       message: "Factura registrada exitosamente",
       usuario: {
         cedula: usuarioActualizado.cedula,
@@ -143,7 +158,10 @@ newRouterClub.post("/registrar-factura", async (c) => {
     });
   } catch (error) {
     console.error(error);
-    return c.json({ error: "Error al registrar la factura" }, 500);
+    return c.json(
+      { success: false, error: "Error al registrar la factura" },
+      500
+    );
   }
 });
 
