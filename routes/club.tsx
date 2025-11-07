@@ -51,7 +51,7 @@ newRouterClub.post("/registrar-factura", async (c) => {
   const prisma = await prismaClients.fetch(c.env.DB);
 
   try {
-    const { id, code, nombre, email, telefono, cedula } = await c.req.json();
+    const { code, nombre, email, telefono } = await c.req.json();
 
     if (!code) {
       return c.json(
@@ -69,17 +69,6 @@ newRouterClub.post("/registrar-factura", async (c) => {
       return c.json({ success: false, error: "Factura no encontrada" }, 404);
     }
 
-    if (factura.dni != 0 && factura.dni !== cedula) {
-      return c.json(
-        {
-          success: false,
-          error:
-            "No se puede acreditar el avance a otro cédula que no sea de la factura",
-        },
-        404
-      );
-    }
-
     // 2. Verificar que el cupón no ha sido usado
     if ((factura as any).isUsedCupon === true) {
       return c.json(
@@ -88,55 +77,47 @@ newRouterClub.post("/registrar-factura", async (c) => {
       );
     }
 
-    // 3. Buscar o crear el usuario
-    let usuario = null;
+    // 3. Obtener la cédula de la factura
+    const cedulaFactura = factura.dni?.toString() || null;
 
-    if (id) {
-      // Si se proporciona ID, buscar por ID
-      usuario = await prisma.usuarioClub.findUnique({
-        where: { id: id },
-      });
-    } else if (email) {
-      // Si no hay ID pero hay email, buscar por email
-      usuario = await prisma.usuarioClub.findUnique({
-        where: { email: email },
-      });
+    if (!cedulaFactura || cedulaFactura === "0") {
+      return c.json(
+        {
+          success: false,
+          error: "La factura no tiene una cédula válida asociada",
+        },
+        400
+      );
     }
 
-    // Si no existe el usuario, crearlo
-    if (!usuario) {
-      if (!nombre || !email) {
-        return c.json(
-          {
-            success: false,
-            error:
-              "Para crear un nuevo usuario se requieren 'nombre' y 'email'",
-          },
-          400
-        );
-      }
+    // 4. Buscar el usuario por la cédula de la factura
+    let usuario = await prisma.usuarioClub.findFirst({
+      where: { cedula: cedulaFactura },
+    });
 
+    // Si no existe el usuario, crearlo con los datos de la factura
+    if (!usuario) {
       usuario = await prisma.usuarioClub.create({
         data: {
-          nombre: nombre,
-          email: email,
-          telefono: telefono || null,
-          cedula: cedula || null,
+          nombre: nombre || factura.name,
+          email: email || factura.email || null,
+          telefono: telefono || factura.phone?.toString() || null,
+          cedula: cedulaFactura,
           nivel: 1,
-          avance: 0,
+          avance: 2,
         },
       });
     }
 
-    // 4. Actualizar el avance del usuario (sumar 1)
+    // 5. Actualizar el avance del usuario (sumar 1)
     const usuarioActualizado = await prisma.usuarioClub.update({
       where: { id: usuario.id },
       data: {
-        avance: (usuario.avance || 0) + 1,
+        avance: (usuario.avance || 2) + 1,
       },
     });
 
-    // 5. Marcar la factura como usada
+    // 6. Marcar la factura como usada
     await prisma.facturaSinInva.update({
       where: { id: factura.id },
       data: {
@@ -151,7 +132,7 @@ newRouterClub.post("/registrar-factura", async (c) => {
         cedula: usuarioActualizado.cedula,
         id: usuarioActualizado.id,
         nombre: usuarioActualizado.nombre,
-        email: usuarioActualizado.email,
+        email: usuarioActualizado.email ?? "defaul@jandrea.art",
         avance: usuarioActualizado.avance,
         nivel: usuarioActualizado.nivel,
       },
@@ -160,6 +141,50 @@ newRouterClub.post("/registrar-factura", async (c) => {
     console.error(error);
     return c.json(
       { success: false, error: "Error al registrar la factura" },
+      500
+    );
+  }
+});
+
+// Endpoint para obtener el progreso de un usuario por cédula
+newRouterClub.get("/obtener-progreso", async (c) => {
+  const prisma = await prismaClients.fetch(c.env.DB);
+  const cedula = c.req.query("cedula");
+
+  if (!cedula) {
+    return c.json(
+      { success: false, error: "El parámetro 'cedula' es requerido" },
+      400
+    );
+  }
+
+  try {
+    const usuario = await prisma.usuarioClub.findFirst({
+      where: { cedula: cedula },
+    });
+
+    if (!usuario) {
+      return c.json(
+        { success: false, error: "Usuario no encontrado" },
+        404
+      );
+    }
+
+    return c.json({
+      success: true,
+      usuario: {
+        cedula: usuario.cedula,
+        id: usuario.id,
+        nombre: usuario.nombre,
+        email: usuario.email ?? "default@jandrea.art",
+        avance: usuario.avance,
+        nivel: usuario.nivel,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return c.json(
+      { success: false, error: "Error al obtener el progreso del usuario" },
       500
     );
   }
