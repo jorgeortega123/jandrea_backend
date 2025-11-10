@@ -26,7 +26,7 @@ export interface Producto {
   categoryId: string;
   identificador: string;
   topicTag?: { tag: string[] };
-  topicTags?: { tag: string };
+  topicTags?: { tag: string[] };
   docena?: boolean;
   variants: Variants_producto[];
 }

@@ -36,7 +36,7 @@ newRouterProducts.post("/create", async (c) => {
           docena: producto.docena,
           cantidad: producto.cantidad,
           topicTags: {
-            create: producto.topicTag?.map((tag) => ({ tag })) || [],
+            create: producto.topicTags?.map((tag) => ({ tag })) || [],
           },
           variants: {
             create: producto.variants.map((variant) => ({
@@ -44,9 +44,9 @@ newRouterProducts.post("/create", async (c) => {
               price: variant.price,
               priceWithoutOff: variant.priceWithoutOff,
               precioDocena: variant.precioDocena,
-              sizes_x: variant.sizes?.x,
-              sizes_y: variant.sizes?.y,
-              sizes_z: variant.sizes?.z,
+              sizes_x: variant.sizes_x,
+              sizes_y: variant.sizes_y,
+              sizes_z: variant.sizes_z,
               images: {
                 create: variant.images.map((img) => ({
                   src: img.src,
