@@ -9,7 +9,11 @@ const newRouterCategories = new Hono<{ Bindings: Bindings }>();
 newRouterCategories.get("/", async (c) => {
   const prisma = await prismaClients.fetch(c.env.DB);
 
-  const categorias = await prisma.categoria.findMany();
+  const categorias = await prisma.categoria.findMany({
+    orderBy: {
+      position: 'asc'
+    }
+  });
 
   return c.json(categorias);
 });
@@ -253,7 +257,13 @@ newRouterCategories.put("/update/:categoryId", async (c) => {
   const body = await c.req.json();
 
   // Validar que el body tenga al menos un campo válido para actualizar
-  const allowedFields = ["seoTitle", "img", "imagenPrefijo", "title"];
+  const allowedFields = [
+    "seoTitle",
+    "img",
+    "imagenPrefijo",
+    "title",
+    "position",
+  ];
   const updateData: Record<string, any> = {};
 
   for (const field of allowedFields) {

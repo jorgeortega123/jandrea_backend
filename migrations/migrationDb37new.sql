@@ -5,7 +5,7 @@ CREATE TABLE "new_Categoria" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "seoTitle" TEXT NOT NULL,
     "categoryId" TEXT NOT NULL,
-    "position" INTEGER NOT NULL,
+    "position" INTEGER NOT NULL DEFAULT 0,
     "img" TEXT NOT NULL,
     "imagenPrefijo" TEXT NOT NULL,
     "title" TEXT NOT NULL
