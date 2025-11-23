@@ -69,6 +69,7 @@ model Categoria {
   id            String     @id @default(cuid()) // 👈 clave primaria
   seoTitle      String
   categoryId    String     @unique
+  position      Int        @default(0)
   img           String
   imagenPrefijo String
   title         String

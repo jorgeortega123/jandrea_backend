@@ -649,6 +649,7 @@ newRouterProducts.get("/all/names", async (c) => {
       select: {
         id: true,
         title: true,
+        topicTags: true,
       },
     });
 
