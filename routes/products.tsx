@@ -389,6 +389,7 @@ newRouterProducts.get("/preview", async (c) => {
       title: true,
       description: all ? true : false,
       identificador: true,
+      inStock: true,
       categoryId: true,
       variants: {
         take: all ? undefined : 1,
