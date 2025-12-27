@@ -10,6 +10,10 @@ import newRouterImages from "../routes/images";
 import newRouterVideos from "../routes/videos";
 import newRouterRespuestas from "../routes/mensajes";
 import newRouterClub from "../routes/club";
+import galeriaRouter from "../routes/galeria";
+import coleccionesRouter from "../routes/colecciones";
+import contabilidadRouter from "../routes/contabilidad";
+import downloadRouter from "../routes/download";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -49,5 +53,9 @@ app.route("/images", newRouterImages);
 app.route("/videos", newRouterVideos);
 app.route("/respuestas", newRouterRespuestas);
 app.route("/club", newRouterClub);
+app.route("/gallery", galeriaRouter);
+app.route("/colecciones", coleccionesRouter);
+app.route("/contabilidad", contabilidadRouter);
+app.route("/csv", downloadRouter);
 
 export default app;
