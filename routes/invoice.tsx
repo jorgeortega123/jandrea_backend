@@ -3,6 +3,11 @@ import { Bindings } from "../types/types";
 import prismaClients from "../src/lib/prismaClients";
 
 const newRouter = new Hono<{ Bindings: Bindings }>();
+
+
+
+
+
 newRouter.post("/create", async (c, next) => {
   const body = await c.req.json();
   const prisma = await prismaClients.fetch(c.env.DB);
@@ -87,6 +92,64 @@ newRouter.post("/create", async (c, next) => {
     );
   }
 });
+// Obtener todas las facturas con paginación
+newRouter.get("/all", async (c) => {
+  const prisma = await prismaClients.fetch(c.env.DB);
+
+  // Obtener parámetros de paginación desde query params
+  const page = parseInt(c.req.query("page") || "1");
+  const limit = parseInt(c.req.query("limit") || "20");
+
+  // Calcular skip
+  const skip = (page - 1) * limit;
+
+  try {
+    // Obtener total de facturas
+    const totalFacturas = await prisma.facturaSinInva.count();
+
+    // Obtener facturas paginadas con sus productos y descuentos
+    const facturas = await prisma.facturaSinInva.findMany({
+      skip,
+      take: limit,
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        products: true,
+        discounts: true,
+      },
+    });
+
+    // Calcular metadata de paginación
+    const totalPages = Math.ceil(totalFacturas / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    return c.json({
+      success: true,
+      facturas,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalFacturas,
+        limit,
+        hasNextPage,
+        hasPrevPage,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return c.json(
+      {
+        success: false,
+        error: "Error al obtener las facturas",
+        date: error,
+      },
+      500
+    );
+  }
+});
+
 newRouter.get("/notPrinted", async (c, next) => {
   const prisma = await prismaClients.fetch(c.env.DB);
   const resultados = await prisma.facturaSinInva.findMany({
@@ -167,5 +230,8 @@ newRouter.delete("/delete", async (c) => {
     );
   }
 });
+
+
+
 
 export default newRouter;

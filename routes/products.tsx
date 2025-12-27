@@ -545,6 +545,7 @@ newRouterProducts.patch("/edit/:id", async (c) => {
         cantidad: body.cantidad,
         docena: body.docena,
         identificador: body.identificador,
+        inStock: body.inStock,
         topicTags: {
           deleteMany: {},
           create:

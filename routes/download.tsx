@@ -21,20 +21,18 @@ function convertirACSV(data: any[]): string {
     "brand",
   ];
 
-  // Crear línea de cabeceras
-  const csvHeaders = headers.join(",");
+  // Crear línea de cabeceras - TODAS con comillas
+  const csvHeaders = headers.map((h) => `"${h}"`).join(",");
 
-  // Crear líneas de datos
+  // Crear líneas de datos - TODOS los valores con comillas
   const csvRows = data.map((row) => {
     return headers
       .map((header) => {
         const value = row[header] || "";
-        // Escapar comillas y envolver en comillas si contiene comas o saltos de línea
         const stringValue = String(value);
-        if (stringValue.includes(",") || stringValue.includes('"') || stringValue.includes("\n")) {
-          return `"${stringValue.replace(/"/g, '""')}"`;
-        }
-        return stringValue;
+        // Escapar comillas dobles duplicándolas y siempre envolver en comillas
+        const escapedValue = stringValue.replace(/"/g, '""');
+        return `"${escapedValue}"`;
       })
       .join(",");
   });
@@ -64,16 +62,16 @@ downloadRouter.get("/download", async (c) => {
       // Si el producto tiene variantes, crear una fila por cada variante
       if (producto.variants && producto.variants.length > 0) {
         return producto.variants.map((variant) => {
-          const todasImagenes = variant.images?.map((img) => img.src).join("|") || "";
-
           return {
             id: producto.identificador || producto.id,
-            title: `${producto.title || ""} - ${variant.description || ""}`.trim(),
+            title: `${producto.title || ""} `,
             description: producto.description || "",
             price: `${variant.price || 0} USD`,
             condition: "new",
-            link: `https://jandrea.art/products/${producto.identificador || producto.id}`,
-            image_link: todasImagenes,
+            link: `https://jandrea.art/products/${
+              producto.identificador || producto.id
+            }`,
+            image_link: variant.images[1].src,
             availability: producto.inStock ? "in stock" : "out of stock",
             brand: "Jandrea art",
           };
@@ -86,7 +84,9 @@ downloadRouter.get("/download", async (c) => {
           description: producto.description || "",
           price: `${producto.price || 0} USD`,
           condition: "new",
-          link: `https://jandrea.art/products/${producto.identificador || producto.id}`,
+          link: `https://jandrea.art/products/${
+            producto.identificador || producto.id
+          }`,
           image_link: "",
           availability: producto.inStock ? "in stock" : "out of stock",
           brand: "Jandrea art",
@@ -101,7 +101,9 @@ downloadRouter.get("/download", async (c) => {
     return new Response(csv, {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="productos_${new Date().toISOString().split("T")[0]}.csv"`,
+        "Content-Disposition": `attachment; filename="productos_${
+          new Date().toISOString().split("T")[0]
+        }.csv"`,
       },
     });
   } catch (error) {
@@ -138,15 +140,20 @@ downloadRouter.get("/products/preview", async (c) => {
     const productosFormateados = productos.flatMap((producto) => {
       if (producto.variants && producto.variants.length > 0) {
         return producto.variants.map((variant) => {
-          const todasImagenes = variant.images?.map((img) => img.src).join("|") || "";
+          const todasImagenes =
+            variant.images?.map((img) => img.src).join("|") || "";
 
           return {
             id: producto.identificador || producto.id,
-            title: `${producto.title || ""} - ${variant.description || ""}`.trim(),
+            title: `${producto.title || ""} - ${
+              variant.description || ""
+            }`.trim(),
             description: producto.description || "",
             price: `${variant.price || 0} USD`,
             condition: "new",
-            link: `https://jandrea.art/products/${producto.identificador || producto.id}`,
+            link: `https://jandrea.art/products/${
+              producto.identificador || producto.id
+            }`,
             image_link: todasImagenes,
             availability: producto.inStock ? "in stock" : "out of stock",
             brand: "Jandrea art",
@@ -159,7 +166,9 @@ downloadRouter.get("/products/preview", async (c) => {
           description: producto.description || "",
           price: `${producto.price || 0} USD`,
           condition: "new",
-          link: `https://jandrea.art/products/${producto.identificador || producto.id}`,
+          link: `https://jandrea.art/products/${
+            producto.identificador || producto.id
+          }`,
           image_link: "",
           availability: producto.inStock ? "in stock" : "out of stock",
           brand: "Jandrea art",

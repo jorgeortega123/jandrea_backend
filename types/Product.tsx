@@ -19,6 +19,7 @@ export interface Variants_producto {
 }
 
 export interface Producto {
+  inStock?: boolean;
   cantidad?: number;
   title?: string;
   description?: string;
