@@ -82,7 +82,7 @@ downloadRouter.get("/download", async (c) => {
             link: `https://jandrea.art/products/${formatWords(
               producto?.title ?? ""
             )}`,
-            image_link: variant.images[1].src,
+            image_link: variant?.images[1]?.src || "",
             availability: producto.inStock ? "in stock" : "out of stock",
             brand: "Jandrea art",
           };
