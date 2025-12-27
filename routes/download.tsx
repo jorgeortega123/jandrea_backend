@@ -43,6 +43,17 @@ function convertirACSV(data: any[]): string {
 // Endpoint para descargar productos en formato CSV
 downloadRouter.get("/download", async (c) => {
   try {
+    const formatWords = (text?: string) => {
+      // Proporciona un valor por defecto de cadena vacía si 'text' es 'undefined'
+      const safeText = text ?? "";
+
+      // Reemplaza los espacios por guiones y convierte a minúsculas
+      const res = safeText.replace(/ /g, "-").toLowerCase();
+
+      // Normaliza el texto para eliminar los acentos y diacríticos
+      return res.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    };
+
     const prisma = await prismaClients.fetch(c.env.DB);
 
     // Obtener todos los productos con sus variantes e imágenes
@@ -68,9 +79,9 @@ downloadRouter.get("/download", async (c) => {
             description: producto.description || "",
             price: `${variant.price || 0} USD`,
             condition: "new",
-            link: `https://jandrea.art/products/${
-              producto.identificador || producto.id
-            }`,
+            link: `https://jandrea.art/products/${formatWords(
+              producto?.title ?? ""
+            )}`,
             image_link: variant.images[1].src,
             availability: producto.inStock ? "in stock" : "out of stock",
             brand: "Jandrea art",
