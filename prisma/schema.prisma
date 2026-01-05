@@ -178,6 +178,7 @@ model coleccionesTag {
   id          String   @id @default(cuid())
   word        String
   title       String?
+  type        String?
   description String?
   createdAt   DateTime @default(now())
 }

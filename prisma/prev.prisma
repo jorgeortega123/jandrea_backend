@@ -181,3 +181,12 @@ model coleccionesTag {
   description String?
   createdAt   DateTime @default(now())
 }
+
+model gastosJandrea {
+  id          String   @id @default(cuid())
+  title       String?
+  description String?
+  mount       Float?
+  type        String?
+  createdAt   DateTime @default(now())
+}
