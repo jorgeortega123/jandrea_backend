@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { Bindings } from "../types/types";
 import prismaClients from "../src/lib/prismaClients";
 import { Producto } from "../types/Product";
+import { formatWords } from "../utils/formatWord";
 
 const coleccionesRouter = new Hono<{ Bindings: Bindings }>();
 
@@ -198,6 +199,105 @@ coleccionesRouter.post("/by-tag", async (c) => {
     return c.json({
       success: true,
       tag: word,
+      productos,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalProductos,
+        limit,
+        hasNextPage,
+        hasPrevPage,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener productos por tag:", error);
+    return c.json(
+      {
+        success: false,
+        error: "Error al obtener productos por tag",
+        details: error,
+      },
+      500
+    );
+  }
+});
+
+coleccionesRouter.post("/by-tag/getStaticProps", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { title, page = 1, limit = 20 } = body;
+
+    if (!title) {
+      return c.json({ error: "El campo 'title' (tag) es requerido" }, 400);
+    }
+
+    const prisma = await prismaClients.fetch(c.env.DB);
+    const skip = (page - 1) * limit;
+
+    // Función para convertir slug a texto normalizado
+
+    // Convertir el slug a texto (servilleteros-decorativos -> servilleteros decorativos)
+    const normalizedWord = formatWords(title);
+
+    // Primero buscar todas las colecciones y filtrar en JavaScript para case-insensitive
+    const todasLasColecciones = await prisma.coleccionesTag.findMany();
+    const coleccion = todasLasColecciones.find(
+      (col) =>
+        col.title && formatWords(col.title.toLowerCase()) === normalizedWord
+    );
+
+    if (!coleccion) {
+      return c.json({ error: "Colección no encontrada" }, 404);
+    }
+
+    // Usar el word original de la colección para buscar productos
+    const tagOriginal = coleccion.word;
+
+    // Buscar productos que tengan el tag especificado
+    const productos = await prisma.producto.findMany({
+      where: {
+        topicTags: {
+          some: {
+            tag: tagOriginal,
+          },
+        },
+      },
+      skip,
+      take: limit,
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        variants: {
+          include: {
+            images: {
+              take: 2,
+            },
+          },
+        },
+      },
+    });
+
+    // Contar total de productos con ese tag
+    const totalProductos = await prisma.producto.count({
+      where: {
+        topicTags: {
+          some: {
+            tag: tagOriginal,
+          },
+        },
+      },
+    });
+
+    // Calcular metadata de paginación
+    const totalPages = Math.ceil(totalProductos / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    return c.json({
+      success: true,
+      tag: tagOriginal,
+      // coleccion: coleccion,
       productos,
       pagination: {
         currentPage: page,
