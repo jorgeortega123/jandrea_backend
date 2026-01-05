@@ -8,7 +8,7 @@ const coleccionesRouter = new Hono<{ Bindings: Bindings }>();
 // Agregar una nueva colección
 coleccionesRouter.post("/add", async (c) => {
   const body = await c.req.json();
-  const { word, title, description } = body;
+  const { word, title, description, type } = body;
 
   if (!word) {
     return c.json({ error: "El campo 'word' es requerido" }, 400);
@@ -21,6 +21,7 @@ coleccionesRouter.post("/add", async (c) => {
       word,
       title: title || null,
       description: description || null,
+      type: type || null,
     },
   });
 
@@ -91,7 +92,7 @@ coleccionesRouter.get("/:id", async (c) => {
 coleccionesRouter.put("/update/:id", async (c) => {
   const id = c.req.param("id");
   const body = await c.req.json();
-  const { word, title, description } = body;
+  const { word, title, description, type } = body;
 
   const prisma = await prismaClients.fetch(c.env.DB);
 
@@ -108,7 +109,9 @@ coleccionesRouter.put("/update/:id", async (c) => {
     data: {
       word: word || coleccion.word,
       title: title !== undefined ? title : coleccion.title,
-      description: description !== undefined ? description : coleccion.description,
+      description:
+        description !== undefined ? description : coleccion.description,
+      type: type !== undefined ? type : coleccion.type,
     },
   });
 
@@ -136,6 +139,86 @@ coleccionesRouter.delete("/delete/:id", async (c) => {
   });
 
   return c.json({ message: "Colección eliminada exitosamente" });
+});
+
+// Obtener productos filtrados por tag con paginación
+coleccionesRouter.post("/by-tag", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { word, page = 1, limit = 20 } = body;
+
+    if (!word) {
+      return c.json({ error: "El campo 'word' (tag) es requerido" }, 400);
+    }
+
+    const prisma = await prismaClients.fetch(c.env.DB);
+    const skip = (page - 1) * limit;
+
+    // Buscar productos que tengan el tag especificado
+    const productos = await prisma.producto.findMany({
+      where: {
+        topicTags: {
+          some: {
+            tag: word,
+          },
+        },
+      },
+      skip,
+      take: limit,
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        variants: {
+          include: {
+            images: {
+              take: 2,
+            },
+          },
+        },
+      },
+    });
+
+    // Contar total de productos con ese tag
+    const totalProductos = await prisma.producto.count({
+      where: {
+        topicTags: {
+          some: {
+            tag: word,
+          },
+        },
+      },
+    });
+
+    // Calcular metadata de paginación
+    const totalPages = Math.ceil(totalProductos / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    return c.json({
+      success: true,
+      tag: word,
+      productos,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalProductos,
+        limit,
+        hasNextPage,
+        hasPrevPage,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener productos por tag:", error);
+    return c.json(
+      {
+        success: false,
+        error: "Error al obtener productos por tag",
+        details: error,
+      },
+      500
+    );
+  }
 });
 
 export default coleccionesRouter;
