@@ -22,6 +22,7 @@ model User {
   accounts      Account[]
   favorites     UserFavorite[]
   addresses     UserAddress[]
+  orders        Order[]
 }
 
 model Session {
@@ -265,4 +266,49 @@ model gastosJandrea {
   mount       Float?
   type        String?
   createdAt   DateTime @default(now())
+}
+
+model Order {
+  id             String     @id @default(cuid())
+  userId         String
+  user           User       @relation(fields: [userId], references: [id])
+  items          OrderItem[]
+
+  address        String
+  city           String?
+  province       String?
+  lat            Float
+  lng            Float
+  recipientName  String
+  recipientPhone String?
+
+  receiptUrl     String?
+  receiptKey     String?
+
+  subtotal       Float
+  shipping       Float      @default(0)
+  total          Float
+
+  status         String     @default("EN_COLA")
+
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}
+
+model OrderItem {
+  id           String  @id @default(cuid())
+  orderId      String
+  order        Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productoId   String?
+  title        String
+  price        Float
+  quantity     Int
+  variantIndex Int     @default(0)
+  notes        String?
+  imageSrc     String?
+
+  @@index([orderId])
 }
