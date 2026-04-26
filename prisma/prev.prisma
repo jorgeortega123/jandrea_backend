@@ -8,11 +8,79 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Create a simple model database
+
+
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+  id            String         @id @default(cuid())
+  name          String?
+  email         String         @unique
+  emailVerified Boolean        @default(false)
+  image         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  favorites     UserFavorite[]
+  addresses     UserAddress[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model UserFavorite {
+  id         String    @id @default(cuid())
+  userId     String
+  productoId String
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  producto   Producto  @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  @@unique([userId, productoId])
+  @@index([userId])
+}
+
+model UserAddress {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  phone     String?
+  address   String
+  city      String?
+  province  String?
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 model FacturaSinInva {
@@ -94,6 +162,7 @@ model Producto {
   isPrivate     Boolean?              @default(false)
   topicTags     TopicTag[]
   recomendados  ProductoRecomendado[]
+  favorites     UserFavorite[]
 }
 
 model TopicTag {
@@ -178,6 +247,7 @@ model coleccionesTag {
   id          String   @id @default(cuid())
   word        String
   title       String?
+  type        String?
   description String?
   createdAt   DateTime @default(now())
 }

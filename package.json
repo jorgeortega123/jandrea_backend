@@ -4,15 +4,17 @@
     "migration": "npx prisma migrate diff --from-schema-datamodel  ./prisma/prev.prisma  --to-schema-datamodel ./prisma/schema.prisma  --script --output migrations/migrationDb43new.sql",
     "migrationEmpty": "npx prisma migrate diff --from-empty --to-schema-datamodel ./prisma/schema.prisma  --script --output migrations/migrationDb34.sql",
     "database": "npx wrangler d1 migrations apply jandrea --remote",
-    "generate":"pnpm prisma generate",
+    "generate": "pnpm prisma generate",
     "dev": " wrangler dev --remote",
     "deploy": "wrangler deploy --minify",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {
+    "@better-auth/prisma-adapter": "^1.6.9",
     "@cloudflare/workers-types": "^4.20250709.0",
     "@prisma/adapter-d1": "^6.11.1",
     "@prisma/client": "^6.11.1",
+    "better-auth": "^1.6.9",
     "hono": "^4.8.4"
   },
   "devDependencies": {

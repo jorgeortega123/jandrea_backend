@@ -14,6 +14,8 @@ import galeriaRouter from "../routes/galeria";
 import coleccionesRouter from "../routes/colecciones";
 import contabilidadRouter from "../routes/contabilidad";
 import downloadRouter from "../routes/download";
+import authRouter from "../routes/auth";
+import userRouter from "../routes/user";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -24,6 +26,8 @@ app.use(
       const allowedOrigins = [
         "https://jandrea.art",
         "https://www.jandrea.art",
+        "https://store.jandrea.art",
+        "https://api.jandrea.art",
         "https://jorgeortega.vercel.app",
         "http://localhost:3000",
         "http://localhost",
@@ -32,6 +36,7 @@ app.use(
     },
     allowMethods: ["GET", "POST", "OPTIONS", "PATCH", "DELETE", "PUT"],
     allowHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
   })
 );
 // const validarClave = async (c: Context, next: Next) => {
@@ -57,5 +62,7 @@ app.route("/gallery", galeriaRouter);
 app.route("/colecciones", coleccionesRouter);
 app.route("/contabilidad", contabilidadRouter);
 app.route("/csv", downloadRouter);
+app.route("/api/auth", authRouter);
+app.route("/api/user", userRouter);
 
 export default app;
