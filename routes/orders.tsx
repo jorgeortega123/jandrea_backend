@@ -5,8 +5,39 @@ import { createAuth } from "../src/lib/auth";
 
 const ordersRouter = new Hono<{ Bindings: Bindings }>();
 
-// Middleware: obtener session del usuario
+// GET /receipt/* - Servir imagen de comprobante desde R2 (PUBLICO - sin auth)
+ordersRouter.get("/receipt/*", async (c) => {
+  const url = new URL(c.req.url);
+  // pathname es /api/orders/receipt/receipts/xxx.jpg
+  // extraemos todo despues de /receipt/
+  const key = url.pathname.replace("/api/orders/receipt/", "");
+
+  if (!key) {
+    return c.json({ success: false, message: "Key no proporcionada" }, 400);
+  }
+
+  const object = await c.env.RECEIPTS_BUCKET.get(key);
+
+  if (!object) {
+    return c.json({ success: false, message: "Imagen no encontrada", key }, 404);
+  }
+
+  const headers = new Headers();
+  headers.set("Cache-Control", "public, max-age=86400");
+  headers.set("Access-Control-Allow-Origin", "*");
+  object.writeHttpMetadata(headers);
+
+  return new Response(object.body, { headers });
+});
+
+// Middleware: obtener session del usuario (solo para rutas debajo de aqui)
 ordersRouter.use("*", async (c, next) => {
+  // Skip auth para la ruta de receipts (ya manejada arriba)
+  const url = new URL(c.req.url);
+  if (url.pathname.includes("/receipt/")) {
+    return next();
+  }
+
   try {
     const auth = createAuth(c.env.DB, c.env);
     const session = await auth.api.getSession({
@@ -45,29 +76,13 @@ ordersRouter.post("/upload-receipt", async (c) => {
       httpMetadata: { contentType: file.type },
     });
 
-    const url = `https://api.jandrea.art/orders/receipt/${key}`;
+    const url = `https://api.jandrea.art/api/orders/receipt/${key}`;
 
     return c.json({ success: true, receiptUrl: url, receiptKey: key });
   } catch (error: any) {
     console.error("[Upload Receipt Error]", error);
     return c.json({ success: false, message: error?.message || "Error subiendo comprobante" }, 500);
   }
-});
-
-// GET /receipt/* - Servir imagen de comprobante desde R2
-ordersRouter.get("/receipt/*", async (c) => {
-  const key = c.req.path.replace("/orders/receipt/", "");
-  const object = await c.env.RECEIPTS_BUCKET.get(key);
-
-  if (!object) {
-    return c.json({ success: false, message: "Imagen no encontrada" }, 404);
-  }
-
-  const headers = new Headers();
-  headers.set("Cache-Control", "public, max-age=86400");
-  object.writeHttpMetadata(headers);
-
-  return new Response(object.body, { headers });
 });
 
 // POST /create - Crear pedido
