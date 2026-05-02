@@ -241,31 +241,31 @@ newRouterCategories.get("/products/by-category-code/:categoryId", async (c) => {
   }
 
   try {
-    let productos: any[] = [];
     const where = { categoryId: categoria.id };
 
-    if (showAllProducto) {
-      productos = await prisma.producto.findMany({
-        where,
-        orderBy: orderBy.length > 0 ? orderBy : undefined,
-      });
-    } else {
-      productos = await prisma.producto.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: orderBy.length > 0 ? orderBy : undefined,
-        include: {
-          variants: {
-            take: 1,
-            include: {
-              colors: { take: 1 },
-              images: { take: 2 },
+    const productos = await prisma.producto.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: orderBy.length > 0 ? orderBy : undefined,
+      select: {
+        id: true,
+        title: true,
+        price: true,
+        identificador: true,
+        variants: {
+          take: 1,
+          select: {
+            price: true,
+            images: {
+              take: 1,
+              skip: 1,
+              select: { src: true },
             },
           },
         },
-      });
-    }
+      },
+    });
 
     const total = await prisma.producto.count({ where });
     const hasNextPage = skip + productos.length < total;
