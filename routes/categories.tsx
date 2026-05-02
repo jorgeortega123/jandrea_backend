@@ -207,6 +207,76 @@ newRouterCategories.get("/products/by-category/:categoryId", async (c) => {
     return c.json({ error: "Error al obtener productos" }, 500);
   }
 });
+newRouterCategories.get("/products/by-category-code/:categoryId", async (c) => {
+  const prisma = await prismaClients.fetch(c.env.DB);
+
+  const { categoryId } = c.req.param();
+  const page = parseInt(c.req.query("page") || "1");
+  const limit = parseInt(c.req.query("limit") || "5");
+
+  const sortByPrice = c.req.query("sortByPrice");
+  const sortByDate = c.req.query("sortByDate");
+  const showAllProducto = c.req.query("all");
+
+  if (!categoryId) {
+    return c.json({ error: "Falta categoryId" }, 400);
+  }
+
+  const categoria = await prisma.categoria.findUnique({
+    where: { categoryId },
+  });
+
+  if (!categoria) {
+    return c.json({ error: "Categoría no encontrada" }, 404);
+  }
+
+  const skip = (page - 1) * limit;
+  const orderBy: any[] = [];
+
+  if (sortByPrice === "asc" || sortByPrice === "desc") {
+    orderBy.push({ price: sortByPrice });
+  }
+  if (sortByDate === "asc" || sortByDate === "desc") {
+    orderBy.push({ createdAt: sortByDate });
+  }
+
+  try {
+    let productos: any[] = [];
+    const where = { categoryId: categoria.id };
+
+    if (showAllProducto) {
+      productos = await prisma.producto.findMany({
+        where,
+        orderBy: orderBy.length > 0 ? orderBy : undefined,
+      });
+    } else {
+      productos = await prisma.producto.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: orderBy.length > 0 ? orderBy : undefined,
+        include: {
+          variants: {
+            take: 1,
+            include: {
+              colors: { take: 1 },
+              images: { take: 2 },
+            },
+          },
+        },
+      });
+    }
+
+    const total = await prisma.producto.count({ where });
+    const hasNextPage = skip + productos.length < total;
+
+    return c.json({ productos, hasNextPage });
+  } catch (error) {
+    console.error(error);
+    return c.json({ error: "Error al obtener productos" }, 500);
+  }
+});
+
 newRouterCategories.get("/products/by-category/:categoryId/all", async (c) => {
   const prisma = await prismaClients.fetch(c.env.DB);
 
