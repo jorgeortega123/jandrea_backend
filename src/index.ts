@@ -24,16 +24,17 @@ app.use(
   "*",
   cors({
     origin: (origin) => {
-      const allowedOrigins = [
-        "https://jandrea.art",
-        "https://www.jandrea.art",
-        "https://store.jandrea.art",
-        "https://api.jandrea.art",
-        "https://jorgeortega.vercel.app",
-        "http://localhost:3000",
-        "http://localhost",
-      ];
-      return allowedOrigins.includes(origin ?? "") ? origin : "";
+      if (!origin) return "";
+      try {
+        const url = new URL(origin);
+        if (url.hostname === "jandrea.art" || url.hostname.endsWith(".jandrea.art")) {
+          return origin;
+        }
+      } catch {}
+      if (origin === "http://localhost:3000" || origin === "http://localhost") {
+        return origin;
+      }
+      return "";
     },
     allowMethods: ["GET", "POST", "OPTIONS", "PATCH", "DELETE", "PUT"],
     allowHeaders: ["Content-Type", "Authorization"],
