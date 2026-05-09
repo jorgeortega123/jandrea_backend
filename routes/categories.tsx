@@ -249,7 +249,6 @@ newRouterCategories.get("/products/by-category-code/:categoryId", async (c) => {
       take: limit,
       orderBy: orderBy.length > 0 ? orderBy : undefined,
       select: {
-        id: true,
         title: true,
         price: true,
         identificador: true,
