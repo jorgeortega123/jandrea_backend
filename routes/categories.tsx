@@ -181,8 +181,10 @@ newRouterCategories.get("/products/by-category/:categoryId", async (c) => {
         orderBy: orderBy.length > 0 ? orderBy : undefined, // solo si se pasa algo
         include: {
           variants: {
+            
             take: 1,
             include: {
+              
               colors: {
                 take: 1,
               },
@@ -251,6 +253,7 @@ newRouterCategories.get("/products/by-category-code/:categoryId", async (c) => {
       select: {
         title: true,
         price: true,
+        description: true,
         identificador: true,
         variants: {
           take: 1,
