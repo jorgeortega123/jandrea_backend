@@ -17,6 +17,7 @@ import downloadRouter from "../routes/download";
 import authRouter from "../routes/auth";
 import userRouter from "../routes/user";
 import ordersRouter from "../routes/orders";
+import searchRouter from "../routes/search";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -67,5 +68,6 @@ app.route("/csv", downloadRouter);
 app.route("/api/auth", authRouter);
 app.route("/api/user", userRouter);
 app.route("/api/orders", ordersRouter);
+app.route("/search", searchRouter);
 
 export default app;
