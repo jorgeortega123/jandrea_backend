@@ -1,12 +1,12 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { PrismaClient } from "@prisma/client";
-import { PrismaD1 } from "@prisma/adapter-d1";
 import { Bindings } from "../../types/types";
+import { getPrismaClient } from "./prismaClients";
 
 export function createAuth(db: D1Database, env: Bindings) {
-  const adapter = new PrismaD1(db);
-  const prisma = new PrismaClient({ adapter });
+  // Reutiliza el PrismaClient compartido del isolate (antes creaba otro motor
+  // WASM de Prisma en cada petición de auth/sesión).
+  const prisma = getPrismaClient(db);
 
   return betterAuth({
     baseURL: "https://api.jandrea.art",
