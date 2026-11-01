@@ -18,6 +18,7 @@ import authRouter from "../routes/auth";
 import userRouter from "../routes/user";
 import ordersRouter from "../routes/orders";
 import searchRouter from "../routes/search";
+import leadsRouter from "../routes/leads";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -69,5 +70,6 @@ app.route("/api/auth", authRouter);
 app.route("/api/user", userRouter);
 app.route("/api/orders", ordersRouter);
 app.route("/search", searchRouter);
+app.route("/leads", leadsRouter);
 
 export default app;

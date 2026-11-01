@@ -312,3 +312,33 @@ model OrderItem {
 
   @@index([orderId])
 }
+
+/// Solicitud de cotización enviada desde /cart (el carrito ahora es "Mi
+/// cotización"). Se gestiona en store.jandrea.art/leads.
+model Lead {
+  id          String   @id @default(cuid())
+  /// BASICA (nombre, correo, teléfono) | COMPLETA (+ cédula/RUC y dirección)
+  tipo        String   @default("BASICA")
+  nombre      String
+  email       String?
+  telefono    String
+  cedulaRuc   String?
+  direccion   String?
+  notas       String?
+  /// JSON con la foto de los productos al momento de la solicitud:
+  /// [{ productoId, identificador, title, variantIndex, variantLabel, quantity, notes, imageSrc, url }]
+  items       String
+  totalItems  Int      @default(0)
+  /// NUEVO | CONTACTADO | COTIZADO | CERRADO | DESCARTADO
+  estado      String   @default("NUEVO")
+  /// Aviso por correo al equipo: PENDIENTE | ENVIADO | ERROR
+  emailStatus String   @default("PENDIENTE")
+  emailError  String?
+  ip          String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([estado])
+  @@index([createdAt])
+  @@index([ip, createdAt])
+}

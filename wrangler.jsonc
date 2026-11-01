@@ -17,9 +17,12 @@
                 
 
                     },
-  // "vars": {
-  //   "MY_VAR": "my-variable"
-  // },
+  // Cloudflare Email Service: avisos de nuevas solicitudes de proforma (routes/leads.tsx).
+  // El dominio jandrea.art debe estar dado de alta en Email Sending.
+  "send_email": [{ "name": "EMAIL" }],
+  "vars": {
+    "EMAIL_FROM": "contacto@jandrea.art"
+  },
   // "kv_namespaces": [
   //   {
   //     "binding": "MY_KV_NAMESPACE",
