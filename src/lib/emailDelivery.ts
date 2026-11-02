@@ -10,8 +10,11 @@ import { Bindings } from "../../types/types";
  *   ERROR         Cloudflare rechazó el envío (nunca salió)
  *   OMITIDO       confirmación al cliente no enviada a propósito (límite anti-abuso)
  *
- * La entrega se lee de los eventos de Cloudflare (GraphQL `emailSendingAdaptive`,
- * los mismos datos que el registro de actividad del panel).
+ * La entrega se lee de los eventos de Cloudflare (GraphQL), los mismos datos que
+ * el registro de actividad del panel. Hay que mirar DOS datasets: según el
+ * destinatario, el mismo tipo de envío aparece en `emailSendingAdaptive` o solo
+ * en `emailRoutingAdaptive` (eventType "newEmail", visto en producción con
+ * jandrea593ec@gmail.com). Mirar uno solo daría falsos "sin registro".
  */
 export type EntregaStatus =
   | "EN_COLA"
@@ -165,9 +168,13 @@ export async function fetchEmailEvents(
     },
     body: JSON.stringify({
       query: `query($zone:String!,$since:Time!,$until:Time!,$ids:[string!]){viewer{zones(filter:{zoneTag:$zone}){
-        emailSendingAdaptive(limit:1000,orderBy:[datetime_ASC],filter:{datetime_geq:$since,datetime_leq:$until,messageId_in:$ids}){
+        envio:emailSendingAdaptive(limit:200,orderBy:[datetime_ASC],filter:{datetime_geq:$since,datetime_leq:$until,messageId_in:$ids}){
           datetime messageId envelopeTo status errorCause errorDetail
-        }}}}`,
+        }
+        routing:emailRoutingAdaptive(limit:200,orderBy:[datetime_ASC],filter:{datetime_geq:$since,datetime_leq:$until,messageId_in:$ids,eventType:"newEmail"}){
+          datetime messageId to status errorDetail
+        }
+      }}}`,
       variables: {
         zone: env.CF_ZONE_ID,
         since: since.toISOString(),
@@ -182,5 +189,21 @@ export async function fetchEmailEvents(
       `Analytics ${res.status}: ${data?.errors?.[0]?.message ?? "respuesta inválida"}`.slice(0, 300)
     );
   }
-  return data.data?.viewer?.zones?.[0]?.emailSendingAdaptive ?? [];
+  const zone = data.data?.viewer?.zones?.[0];
+  // En routing, `to` puede traer varios destinatarios separados por coma.
+  const routing: EmailEvent[] = (zone?.routing ?? []).flatMap((ev: any) =>
+    String(ev.to ?? "")
+      .split(",")
+      .map((to) => to.trim())
+      .filter(Boolean)
+      .map((to) => ({
+        datetime: ev.datetime,
+        messageId: ev.messageId,
+        envelopeTo: to,
+        status: ev.status,
+        errorDetail: ev.errorDetail,
+      }))
+  );
+  // Primero routing: con la misma hora manda el dataset de envío, más detallado.
+  return [...routing, ...(zone?.envio ?? [])];
 }
