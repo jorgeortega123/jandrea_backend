@@ -331,9 +331,13 @@ model Lead {
   totalItems  Int      @default(0)
   /// NUEVO | CONTACTADO | COTIZADO | CERRADO | DESCARTADO
   estado      String   @default("NUEVO")
-  /// Aviso por correo al equipo: PENDIENTE | ENVIADO | ERROR
+  /// Resumen de los correos de la solicitud: PENDIENTE | EN_COLA | ENTREGADO | PARCIAL | ERROR
+  /// (ver src/lib/emailDelivery.ts)
   emailStatus String   @default("PENDIENTE")
   emailError  String?
+  /// JSON con el estado real de cada correo (cliente y equipo):
+  /// [{ tipo, to, status, messageId, acceptedAt, at, detail }]
+  emailEntregas String?
   ip          String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

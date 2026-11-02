@@ -35,4 +35,8 @@ export type Bindings = {
   LEADS_NOTIFY_TO?: string;
   /** Secreto para el panel /leads (`wrangler secret put LEADS_ADMIN_KEY`). */
   LEADS_ADMIN_KEY?: string;
+  /** Zona de jandrea.art: para consultar los eventos de envío (var de wrangler). */
+  CF_ZONE_ID?: string;
+  /** Token de API con Analytics Read (`wrangler secret put CF_ANALYTICS_TOKEN`). */
+  CF_ANALYTICS_TOKEN?: string;
 };

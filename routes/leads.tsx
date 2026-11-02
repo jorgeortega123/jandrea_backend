@@ -3,20 +3,33 @@ import { Bindings } from "../types/types";
 import prismaClients from "../src/lib/prismaClients";
 import {
   LeadItem,
+  destinosDeLead,
   productUrl,
-  sendLeadNotification,
+  sendLeadEmails,
 } from "../src/lib/leadEmail";
+import {
+  EmailEntrega,
+  Seguimiento,
+  aplicarEventos,
+  debeConsultarse,
+  entregaKey,
+  errorDeEntregas,
+  fetchEmailEvents,
+  parseEntregas,
+  resumenEntregas,
+  seguimientoConfigurado,
+} from "../src/lib/emailDelivery";
 
 /**
  * Solicitudes de cotización (leads).
  *
- *   POST   /leads                      público: crea la solicitud desde /cart y avisa por correo
+ *   POST   /leads                      público: crea la solicitud y envía los dos correos (cliente y equipo)
  *   GET    /leads                      admin: listado paginado (estado, tipo, q)
  *   GET    /leads/auth                 admin: valida la clave (login de /leads y /admin)
  *   GET    /leads/:id                  admin: detalle
  *   PATCH  /leads/:id                  admin: cambiar estado
  *   DELETE /leads/:id                  admin: eliminar (spam)
- *   POST   /leads/:id/reenviar-correo  admin: reintentar el aviso por correo
+ *   POST   /leads/:id/reenviar-correo  admin: reenviar a quien aún no lo recibió
  *
  * Admin = `Authorization: Bearer <LEADS_ADMIN_KEY>` (secreto del Worker).
  * Los leads tienen cédula, dirección y teléfono: nunca se exponen sin clave.
@@ -35,6 +48,9 @@ export const LEAD_ESTADOS = [
 const MAX_ITEMS = 60;
 const RATE_WINDOW_MS = 10 * 60 * 1000;
 const RATE_MAX = 5;
+// Confirmaciones al mismo correo por día: evita usar el formulario para
+// bombardear a un tercero (el correo al cliente va a la dirección que escriban).
+const CONFIRMACIONES_DIA = 3;
 
 // Hosts de imagen aceptados en la solicitud (los que sirve el catálogo).
 const IMAGE_HOSTS = new Set([
@@ -178,30 +194,108 @@ const parseItems = (json: string): LeadItem[] => {
   }
 };
 
-const serialize = <T extends { items: string }>(lead: T) => ({
+const serialize = <T extends { items: string; emailEntregas: string | null }>(lead: T) => ({
   ...lead,
   items: parseItems(lead.items),
+  emailEntregas: parseEntregas(lead.emailEntregas),
 });
 
-async function notifyAndRecord(env: Bindings, leadId: string) {
+/**
+ * Envía los correos de la solicitud y guarda el resultado de cada uno. Con
+ * `soloPendientes` (reenvío desde el panel) no repite a quien ya lo recibió.
+ */
+async function notifyAndRecord(env: Bindings, leadId: string, soloPendientes = false) {
   const prisma = await prismaClients.fetch(env.DB);
   const lead = await prisma.lead.findUnique({ where: { id: leadId } });
-  if (!lead) return { ok: false, error: "Solicitud no encontrada" };
+  if (!lead) return null;
+
+  const previas = parseEntregas(lead.emailEntregas);
+  let destinos = destinosDeLead(env, lead);
+  const omitidas: EmailEntrega[] = [];
+
+  if (soloPendientes && previas.length) {
+    destinos = previas
+      .filter((e) => e.status !== "ENTREGADO" && e.status !== "OMITIDO")
+      .map((e) => ({ tipo: e.tipo ?? "EQUIPO", to: e.to }));
+    if (!destinos.length) return lead;
+  } else if (!soloPendientes && lead.email) {
+    const recientes = await prisma.lead.count({
+      where: {
+        email: lead.email,
+        createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      },
+    });
+    if (recientes > CONFIRMACIONES_DIA) {
+      destinos = destinos.filter((d) => d.tipo !== "CLIENTE");
+      omitidas.push({
+        tipo: "CLIENTE",
+        to: lead.email,
+        status: "OMITIDO",
+        messageId: null,
+        acceptedAt: null,
+        at: new Date().toISOString(),
+        detail: `No se envió: más de ${CONFIRMACIONES_DIA} solicitudes con este correo en 24 h`,
+      });
+    }
+  }
+
+  const nuevas = await sendLeadEmails(env, lead, parseItems(lead.items), destinos);
+  const entregas =
+    soloPendientes && previas.length
+      ? previas.map((e) => nuevas.find((n) => entregaKey(n) === entregaKey(e)) ?? e)
+      : [...nuevas, ...omitidas];
+  return prisma.lead.update({
+    where: { id: leadId },
+    data: {
+      emailEntregas: JSON.stringify(entregas),
+      emailStatus: resumenEntregas(entregas),
+      emailError: errorDeEntregas(entregas),
+    },
+  });
+}
+
+/**
+ * Actualiza con los eventos reales de Cloudflare las solicitudes que aún no
+ * están entregadas. Si la consulta falla no se inventa nada: queda el último
+ * estado conocido y el panel indica que no se pudo comprobar.
+ */
+async function refreshDelivery<
+  T extends { id: string; emailEntregas: string | null; emailStatus: string; emailError: string | null }
+>(env: Bindings, rows: T[]): Promise<{ rows: T[]; seguimiento: Seguimiento }> {
+  if (!seguimientoConfigurado(env)) return { rows, seguimiento: "sin_configurar" };
+
+  const now = Date.now();
+  const pendientes = rows
+    .flatMap((r) => parseEntregas(r.emailEntregas))
+    .filter((e) => debeConsultarse(e, now));
+  if (!pendientes.length) return { rows, seguimiento: "activo" };
+
+  const ids = [...new Set(pendientes.map((e) => e.messageId).filter(Boolean))] as string[];
+  const desde = Math.min(...pendientes.map((e) => Date.parse(e.acceptedAt as string)));
   try {
-    await sendLeadNotification(env, lead, parseItems(lead.items));
-    await prisma.lead.update({
-      where: { id: leadId },
-      data: { emailStatus: "ENVIADO", emailError: null },
-    });
-    return { ok: true as const };
+    const eventos = ids.length
+      ? await fetchEmailEvents(env, ids, new Date(desde - 60_000), new Date(now))
+      : [];
+    const prisma = await prismaClients.fetch(env.DB);
+    const actualizadas = await Promise.all(
+      rows.map(async (row) => {
+        const antes = parseEntregas(row.emailEntregas);
+        const despues = aplicarEventos(antes, eventos, now);
+        const json = JSON.stringify(despues);
+        if (!antes.length || json === JSON.stringify(antes)) return row;
+        const data = {
+          emailEntregas: json,
+          emailStatus: resumenEntregas(despues),
+          emailError: errorDeEntregas(despues),
+        };
+        await prisma.lead.update({ where: { id: row.id }, data });
+        return { ...row, ...data };
+      })
+    );
+    return { rows: actualizadas, seguimiento: "activo" };
   } catch (error: any) {
-    const msg = `${error?.code ? `${error.code}: ` : ""}${error?.message || error}`.slice(0, 500);
-    console.error("[Lead Email Error]", leadId, msg);
-    await prisma.lead.update({
-      where: { id: leadId },
-      data: { emailStatus: "ERROR", emailError: msg },
-    });
-    return { ok: false as const, error: msg };
+    console.error("[Lead Delivery Error]", error?.message || error);
+    return { rows, seguimiento: "error" };
   }
 }
 
@@ -269,7 +363,9 @@ leadsRouter.post("/", async (c) => {
     });
 
     // El correo no bloquea la respuesta; su resultado queda en el lead.
-    c.executionCtx.waitUntil(notifyAndRecord(c.env, lead.id));
+    c.executionCtx.waitUntil(
+      notifyAndRecord(c.env, lead.id).catch((e) => console.error("[Lead Notify Error]", lead.id, e))
+    );
 
     return c.json({ success: true, id: lead.id }, 201);
   } catch (error: any) {
@@ -315,9 +411,12 @@ leadsRouter.get("/", requireAdmin, async (c) => {
       prisma.lead.groupBy({ by: ["estado"], _count: { _all: true } }),
     ]);
 
+    const { rows, seguimiento } = await refreshDelivery(c.env, leads);
+
     return c.json({
       success: true,
-      leads: leads.map(serialize),
+      seguimiento,
+      leads: rows.map(serialize),
       counts: Object.fromEntries(porEstado.map((g) => [g.estado, g._count._all])),
       pagination: { currentPage: page, totalPages: Math.ceil(total / limit), total, limit },
     });
@@ -335,7 +434,8 @@ leadsRouter.get("/:id", requireAdmin, async (c) => {
   const prisma = await prismaClients.fetch(c.env.DB);
   const lead = await prisma.lead.findUnique({ where: { id: c.req.param("id") } });
   if (!lead) return c.json({ success: false, message: "Solicitud no encontrada" }, 404);
-  return c.json({ success: true, lead: serialize(lead) });
+  const { rows, seguimiento } = await refreshDelivery(c.env, [lead]);
+  return c.json({ success: true, seguimiento, lead: serialize(rows[0]) });
 });
 
 leadsRouter.patch("/:id", requireAdmin, async (c) => {
@@ -373,12 +473,16 @@ leadsRouter.delete("/:id", requireAdmin, async (c) => {
   }
 });
 
+// Reenvía solo a los destinatarios que aún no lo recibieron.
 leadsRouter.post("/:id/reenviar-correo", requireAdmin, async (c) => {
-  const result = await notifyAndRecord(c.env, c.req.param("id"));
-  return c.json(
-    result.ok ? { success: true } : { success: false, message: result.error },
-    result.ok ? 200 : 502
-  );
+  try {
+    const lead = await notifyAndRecord(c.env, c.req.param("id"), true);
+    if (!lead) return c.json({ success: false, message: "Solicitud no encontrada" }, 404);
+    return c.json({ success: true, lead: serialize(lead) });
+  } catch (error: any) {
+    console.error("[Resend Lead Error]", error);
+    return c.json({ success: false, message: "No se pudo reenviar el correo" }, 500);
+  }
 });
 
 export default leadsRouter;

@@ -21,7 +21,8 @@
   // El dominio jandrea.art debe estar dado de alta en Email Sending.
   "send_email": [{ "name": "EMAIL" }],
   "vars": {
-    "EMAIL_FROM": "contacto@jandrea.art"
+    "EMAIL_FROM": "contacto@jandrea.art",
+    "CF_ZONE_ID": "e67a9fbe75fa39c924bd400d6fe4aee7"
   },
   // "kv_namespaces": [
   //   {
