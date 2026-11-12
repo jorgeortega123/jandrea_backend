@@ -1,5 +1,6 @@
 import { Hono } from "hono";
-import prismaClients from "./lib/prismaClients";
+import { HTTPException } from "hono/http-exception";
+import { isPrismaTimeout } from "./lib/prismaClients";
 import { getProducts } from "../routes/getProducts";
 import { Bindings } from "../types/types";
 import { cors } from "hono/cors";
@@ -52,8 +53,21 @@ app.use(
 //   }
 // };
 
-app.get("/", async (c) => {
-  c.json({ text: "Hi" });
+app.get("/", (c) => c.json({ text: "Hi" }));
+
+// Prisma atascado (ver src/lib/prismaClients.tsx): responder 503 en vez de
+// dejar la petición colgada. El resto conserva el 500 por defecto de Hono.
+app.onError((err, c) => {
+  if (isPrismaTimeout(err)) {
+    console.error("[Prisma Timeout]", c.req.method, c.req.path, err.message);
+    return c.json(
+      { success: false, message: "Servicio ocupado, intenta de nuevo en unos segundos." },
+      503
+    );
+  }
+  if (err instanceof HTTPException) return err.getResponse();
+  console.error(err);
+  return c.text("Internal Server Error", 500);
 });
 app.route("/invoice", newRouter);
 app.route("/products", newRouterProducts);
