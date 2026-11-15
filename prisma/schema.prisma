@@ -314,7 +314,7 @@ model OrderItem {
 }
 
 /// Solicitud de cotización enviada desde /cart (el carrito ahora es "Mi
-/// cotización"). Se gestiona en store.jandrea.art/leads.
+/// cotización"). Se gestiona en jandrea.art/leads.
 model Lead {
   id          String   @id @default(cuid())
   /// BASICA (nombre, correo, teléfono) | COMPLETA (+ cédula/RUC y dirección)

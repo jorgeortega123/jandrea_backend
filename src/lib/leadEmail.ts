@@ -27,7 +27,7 @@ export interface LeadForEmail {
   createdAt: Date;
 }
 
-export const STORE_URL = "https://store.jandrea.art";
+export const STORE_URL = "https://jandrea.art";
 
 const DEFAULT_FROM = "proformas@jandrea.art";
 /** Aviso interno "nuevo cliente". Se puede cambiar con la var LEADS_NOTIFY_TO. */
@@ -250,7 +250,7 @@ function buildClienteHtml(lead: LeadForEmail, items: LeadItem[]) {
     <a href="${esc(whatsapp)}" style="display:inline-block;background:#18181b;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 20px;border-radius:10px">Escríbenos por WhatsApp</a>
   </td></tr>
   <tr><td style="padding:16px 28px 24px;font-size:12px;line-height:1.5;color:#a1a1aa">
-    Recibiste este correo porque se solicitó una proforma con esta dirección en store.jandrea.art. Si no fuiste tú, puedes ignorarlo.
+    Recibiste este correo porque se solicitó una proforma con esta dirección en jandrea.art. Si no fuiste tú, puedes ignorarlo.
   </td></tr>
 </table>
 </td></tr>
@@ -282,7 +282,7 @@ function buildClienteText(lead: LeadForEmail, items: LeadItem[]) {
     "",
     "¿Dudas? Escríbenos por WhatsApp: +593 98 638 7530",
     "",
-    "Recibiste este correo porque se solicitó una proforma con esta dirección en store.jandrea.art. Si no fuiste tú, puedes ignorarlo.",
+    "Recibiste este correo porque se solicitó una proforma con esta dirección en jandrea.art. Si no fuiste tú, puedes ignorarlo.",
   ].join("\n");
 }
 
