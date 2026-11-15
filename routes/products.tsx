@@ -115,7 +115,7 @@ newRouterProducts.get("/recomendados", async (c) => {
             price: true,
             priceWithoutOff: true,
             images: {
-              take: 2,
+              take: 3, // recorte (main.png) + 2 fotos: la tarjeta usa la 2ª foto en el hover
               select: { src: true },
             },
           },
@@ -183,7 +183,7 @@ newRouterProducts.post("/similares", async (c) => {
             price: true,
             priceWithoutOff: true,
             images: {
-              take: 2,
+              take: 3, // recorte (main.png) + 2 fotos: la tarjeta usa la 2ª foto en el hover
               select: { src: true },
             },
           },
@@ -220,7 +220,7 @@ newRouterProducts.post("/similares", async (c) => {
               price: true,
               priceWithoutOff: true,
               images: {
-                take: 2,
+                take: 3, // recorte (main.png) + 2 fotos: la tarjeta usa la 2ª foto en el hover
                 select: { src: true },
               },
             },
@@ -288,7 +288,7 @@ newRouterProducts.get("/nuevos", async (c) => {
             price: true,
             priceWithoutOff: true,
             images: {
-              take: 2,
+              take: 3, // recorte (main.png) + 2 fotos: la tarjeta usa la 2ª foto en el hover
               select: { src: true },
             },
           },
@@ -354,7 +354,7 @@ newRouterProducts.get("/recientes", async (c) => {
             price: true,
             priceWithoutOff: true,
             images: {
-              take: 2,
+              take: 3, // recorte (main.png) + 2 fotos: la tarjeta usa la 2ª foto en el hover
               select: { src: true },
             },
           },

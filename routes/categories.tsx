@@ -82,7 +82,7 @@ newRouterCategories.get("/img/from/producto/:id", async (c) => {
           take: 1,
           include: {
             images: {
-              take: 2,
+              take: 3, // recorte (main.png) + 2 fotos: la tarjeta usa la 2ª foto en el hover
             },
           },
         },
@@ -189,7 +189,7 @@ newRouterCategories.get("/products/by-category/:categoryId", async (c) => {
                 take: 1,
               },
               images: {
-                take: 2,
+                take: 3, // recorte (main.png) + 2 fotos: la tarjeta usa la 2ª foto en el hover
               },
             },
           },

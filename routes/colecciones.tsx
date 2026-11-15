@@ -173,7 +173,7 @@ coleccionesRouter.post("/by-tag", async (c) => {
         variants: {
           include: {
             images: {
-              take: 2,
+              take: 3, // recorte (main.png) + 2 fotos: la tarjeta usa la 2ª foto en el hover
             },
           },
         },
@@ -271,7 +271,7 @@ coleccionesRouter.post("/by-tag/getStaticProps", async (c) => {
         variants: {
           include: {
             images: {
-              take: 2,
+              take: 3, // recorte (main.png) + 2 fotos: la tarjeta usa la 2ª foto en el hover
             },
           },
         },
